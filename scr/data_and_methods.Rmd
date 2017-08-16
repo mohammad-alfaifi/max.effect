@@ -1,0 +1,45 @@
+---
+title: "data and methods"
+header-includes:
+   - \usepackage{bbm}
+output:
+  html_document: default
+  pdf_document: default
+---
+#Data
+The firms whose book value, market value, prices or volume are unavailable were excluded. The data from DataStream normally has duplicated values. Thus, the firms' prices with zero volume were also excluded. The firms with zero prices were excluded. The firms which have a book value in December but do not have a market value avaiable in June are excluded. 
+
+### Daily and Monthly Returns
+
+####-Equally-Weighted Returns
+
+The daily and monthly returns are calculated using the following formula: 
+
+$$
+ln(\frac{P_{t_1}}{P_{t_0}})
+$$
+
+
+In the case of monthly returns, $P_{t_1}$  is the closing price on the last day of month and 
+$P_{t_0}$ is the closing price on last day of previous month.  
+
+
+###Market Returns
+
+
+
+###Fama-French Three-Factor Model
+
+Firms market value are according to the last day of June while their book to market is according to the last day of December of the previous year. 
+
+The firms are first sorted according to their market captialisation. Firms which are above the 90% percentile are classfied as big, otherwise they are classfied as small. Then, firms are classfied according to their book-to-market ratio in tertiles. Big firms with small book-to-market ratio are classfied as big-growth while firms with high book-to-market ratio are classfied as big-value. 
+
+The SMB and HML factors are calculated as following:
+
+  HML = $\frac{1}{2}$ (Small Value + Big Value) -  $\frac{1}{2}$ (Small Growth + Big Growth) 
+  
+  SMB = $\frac {1}{3}$ (Small Value + Small Neutral + Small Growth) - $\frac {1}{3}$  (Big Value + Big Neutral + Big Growth). 	 
+
+
+WML = 1/2 (Small High + Big High)
+– 1/2 (Small Low + Big Low).
