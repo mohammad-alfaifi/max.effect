@@ -19,7 +19,7 @@ and ff3_por returns
 }
 \description{
 It takes a long formated data frame with prices, market value, book balue and volumn
-and calculate the daily SMB and HML. 
+and calculate the daily SMB and HML.
 It first calls for calculate_six_portfolios_returns to calculate the daily six portfolios
 then make the SMB and HML calculation.
 }

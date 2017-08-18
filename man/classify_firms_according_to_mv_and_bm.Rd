@@ -16,7 +16,7 @@ classify_firms_according_to_mv_and_bm(dt, mv_breakpoint = 0.5)
 }
 \description{
 It classfiys firms according to their market cap. Firms Above the median are big
-while firms below the median are small. Next, it classfys each size (big and small) to value, 
+while firms below the median are small. Next, it classfys each size (big and small) to value,
 neutral and growth. Firms with high book-to-market ratio are value while those with low
  book-to-marketa ratio are growth.
 }

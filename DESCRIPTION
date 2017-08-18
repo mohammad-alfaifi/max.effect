@@ -10,5 +10,5 @@ License: What license is it under?
 Encoding: UTF-8
 LazyData: true
 RoxygenNote: 6.0.1
-Imports:data.table, openxlsx, zoo, tidyr, dplyr, lubridate, moments
+Imports:data.table, zoo, tidyr, dplyr, lubridate, moments, broom, lmtest
 Suggest:testthat
