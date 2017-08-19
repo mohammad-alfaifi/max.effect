@@ -87,6 +87,9 @@ group_vars <- function(raw_stocks_info_file,country_code=FALSE,save=FALSE){
   df[factor_cols] <- lapply(df[factor_cols], factor)
   data <- as.data.table(df)
 
+  data[,returns:=log(prices)-shift(log(prices),1L,type="lag"),by=.(firms)]
+  data <- na.omit(data)
+
   if(save){
     dataset_file_name <- paste("data/all_vars",country_code,".rda",sep = "_")
     save(dt,file=dataset_file_name)

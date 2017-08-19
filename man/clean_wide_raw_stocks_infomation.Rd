@@ -18,9 +18,9 @@ clean_wide_raw_stocks_infomation(raw_stocks_info_file, country_code = NULL,
 \description{
 It takes a wide formated data frame with prices, market value, book balue and volumn
  and changes it to long format. It changes the class of the date column to date, and it adds
-a colum for months dates. It excludes dates after july of the last year and before June of the 
+a colum for months dates. It excludes dates after july of the last year and before June of the
 first year. It creates a years column which marks the year start in Jun and its end in July to
 ease fama french three factors calculation later. It changes prices which their volume shows
- NA or zero to zero. It keepsfirms only which their book, market, prices and volume 
+ NA or zero to zero. It keepsfirms only which their book, market, prices and volume
  information are avaiable.
 }
