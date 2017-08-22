@@ -2,7 +2,7 @@
 % Please edit documentation in R/calculate_double_sorted_alpha.R
 \name{get_factor_controlled_portfolio_stats}
 \alias{get_factor_controlled_portfolio_stats}
-\title{get the alpha and p values for double sorted portfolios on max and another factor}
+\title{get the alpha and p-values for double sorted portfolios}
 \usage{
 get_factor_controlled_portfolio_stats(dt, factor_rank_name, factor_ranking,
   portfolio = F, is_e_weighted = T)
@@ -20,6 +20,7 @@ get_factor_controlled_portfolio_stats(dt, factor_rank_name, factor_ranking,
 \code{dt} data table with alpha and p value of nine double sorted portfolios
 }
 \description{
-It calls functions to calulate the nine factors (e.g. max,iv),then
-merge them all in one data table
+It extracts the portfolio which corsponds to the factor_rank_name
+from the received data table, then it calculates the portfolio's return and
+regresses it against fama-french three factors
 }

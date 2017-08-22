@@ -5,6 +5,19 @@ main <- function(){
   dt <- group_vars(raw_stocks_info_file)
 
   alphas <- calculate_double_sorted_alpha(dt)
+  a<-alphas
+  a$factor <- gsub("_", "-", a$factor, ignore.case = FALSE, perl = FALSE,
+                   fixed = FALSE, useBytes = FALSE)
+  a$factor <- gsub("q1", "Low", a$factor, ignore.case = FALSE, perl = FALSE,
+       fixed = FALSE, useBytes = FALSE)
+
+  a$factor <- gsub("q2", "Med", a$factor, ignore.case = FALSE, perl = FALSE,
+                   fixed = FALSE, useBytes = FALSE)
+  a$factor <- gsub("q3", "High", a$factor, ignore.case = FALSE, perl = FALSE,
+                   fixed = FALSE, useBytes = FALSE)
+  a$factor <- gsub("-rank", "", a$factor, ignore.case = FALSE, perl = FALSE,
+                   fixed = FALSE, useBytes = FALSE)
+
 
 }
 

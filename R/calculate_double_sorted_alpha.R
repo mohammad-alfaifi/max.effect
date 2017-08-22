@@ -1,10 +1,11 @@
-#' ccalculate double sorted alphas
-#' @description It takes a link of the stock information, then it calls group_vars function
-#' to get the data with all stocks various ranks. Next it calls get_factor_controlled_portfolio_stats
-#' function to calculates the alpha for a certain factor (e.g. size) of equally and double sorted
+#' calculate double sorted alphas
+#' @description It takes a data table with return and ten other factors.
+#' It calls get_factor_controlled_portfolio_stats function to calculates
+#'  the alpha for a certain factor (e.g. size) of equally and double sorted
 #' portfolios
 #'@param raw_stocks_info_file  link of the stock information
-#'@return \code{dt} data table with double sorted alpha statstics
+#'@return \code{dt} data table with double sorted alpha statstics for both
+#'equally and value weighted portfolios
 #' @import data.table
 #'@export
 #'
@@ -50,9 +51,10 @@ calculate_double_sorted_alpha <- function(dt){
 }
 
 
-#' get the alpha and p values for double sorted portfolios on max and another factor
-#' @description It calls functions to calulate the nine factors (e.g. max,iv),then
-#' merge them all in one data table
+#' get the alpha and p-values for double sorted portfolios
+#' @description It extracts the portfolio which corresponds to the factor_rank_name
+#' from the received data table, then it calculates the portfolio's return and
+#' regresses it against fama-french three factors
 #'@param dt  data table with double sorted stocks
 #'@param factor_rank_name  the name of the factor that we want to double sort with max
 #'@param factor_ranking  the ranks of the factor (levels)

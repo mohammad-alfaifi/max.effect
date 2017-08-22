@@ -2,7 +2,7 @@
 % Please edit documentation in R/calculate_double_sorted_alpha.R
 \name{calculate_double_sorted_alpha}
 \alias{calculate_double_sorted_alpha}
-\title{ccalculate double sorted alphas}
+\title{calculate double sorted alphas}
 \usage{
 calculate_double_sorted_alpha(dt)
 }
@@ -10,11 +10,12 @@ calculate_double_sorted_alpha(dt)
 \item{raw_stocks_info_file}{link of the stock information}
 }
 \value{
-\code{dt} data table with double sorted alpha statstics
+\code{dt} data table with double sorted alpha statstics for both
+equally and value weighted portfolios
 }
 \description{
-It takes a link of the stock information, then it calls group_vars function
-to get the data with all stocks various ranks. Next it calls get_factor_controlled_portfolio_stats
-function to calculates the alpha for a certain factor (e.g. size) of equally and double sorted
+It takes a data table with return and ten other factors.
+It calls get_factor_controlled_portfolio_stats function to calculates
+ the alpha for a certain factor (e.g. size) of equally and double sorted
 portfolios
 }
