@@ -30,10 +30,10 @@ calculate_monthly_illiq_rank <- function(dt){
   
   dt_monthly$yearmon <- dt_monthly$yearmon + (1/12)
 
-  dt_monthly[,illiq_rank:=ifelse(illiq_ratio < quantile(illiq_ratio,0.333),"q1",
+  dt_monthly[,ILLIQ_rank:=ifelse(illiq_ratio < quantile(illiq_ratio,0.333),"q1",
                       ifelse(illiq_ratio < quantile(illiq_ratio,0.666),"q2","q3")),by=.(yearmon)]
   
-  dt_monthly <- dt_monthly[,.(yearmon,firms,illiq_ratio,illiq_rank)]
+  dt_monthly <- dt_monthly[,.(yearmon,firms,illiq_ratio,ILLIQ_rank)]
 
   
   return(dt_monthly)

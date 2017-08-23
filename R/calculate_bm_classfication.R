@@ -18,7 +18,7 @@ calculate_monthly_bm_rank <- function(dt){
   dt_monthly <- dt_monthly[,lag_bm:=shift(BM,6L, type="lag"),by=.(firms)]
   dt_monthly <- na.omit(dt_monthly[,-c("dates","BM"),with=F])
   
-  dt_monthly <- dt_monthly[,bm_rank:=ifelse(lag_bm < quantile(lag_bm,0.333),"q1",
+  dt_monthly <- dt_monthly[,BM_rank:=ifelse(lag_bm < quantile(lag_bm,0.333),"q1",
                                               ifelse(lag_bm < quantile(lag_bm,0.666),"q2","q3"))
                            ,by=.(yearmon)]
   

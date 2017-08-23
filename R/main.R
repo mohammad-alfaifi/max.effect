@@ -5,18 +5,6 @@ main <- function(){
   dt <- group_vars(raw_stocks_info_file)
 
   alphas <- calculate_double_sorted_alpha(dt)
-  a<-alphas
-  a$factor <- gsub("_", "-", a$factor, ignore.case = FALSE, perl = FALSE,
-                   fixed = FALSE, useBytes = FALSE)
-  a$factor <- gsub("q1", "Low", a$factor, ignore.case = FALSE, perl = FALSE,
-       fixed = FALSE, useBytes = FALSE)
-
-  a$factor <- gsub("q2", "Med", a$factor, ignore.case = FALSE, perl = FALSE,
-                   fixed = FALSE, useBytes = FALSE)
-  a$factor <- gsub("q3", "High", a$factor, ignore.case = FALSE, perl = FALSE,
-                   fixed = FALSE, useBytes = FALSE)
-  a$factor <- gsub("-rank", "", a$factor, ignore.case = FALSE, perl = FALSE,
-                   fixed = FALSE, useBytes = FALSE)
 
 
 }
@@ -53,8 +41,8 @@ group_vars <- function(raw_stocks_info_file,country_code=FALSE,save=FALSE){
   data <-as.data.table(Reduce(function(...) merge(...,by=c("yearmon","firms")), list(size, bm, cl,rev,mom,max,skewness,iv,illiq,dt_monthly)))
   data <- merge(data,ff3_monthly, by="yearmon")
 
-  factor_cols <- c("size_rank","bm_rank","cl_prices_rank","rev_rank","mom_rank",
-                   "coskew_rank","iskew_rank","illiq_rank","iv_rank")
+  factor_cols <- c("Size_rank","BM_rank","CP_rank","Rev_rank","MOM_rank",
+                   "SSKEW_rank","ISKEW_rank","ILLIQ_rank","IV_rank")
   df <- as.data.frame(data)
   df[factor_cols] <- lapply(df[factor_cols], factor)
   data <- as.data.table(df)

@@ -15,7 +15,7 @@ calculate_monthly_reversal <- function(dt){
   
   dt_monthly <- dt_monthly[,rev:=shift(monthly_returns,1L, type="lag"),by=.(firms)]
   dt_monthly <- na.omit(dt_monthly[,.(yearmon,firms,rev)])
-  dt_monthly <- dt_monthly[,rev_rank:=ifelse(rev < quantile(rev,0.333),"q1",
+  dt_monthly <- dt_monthly[,Rev_rank:=ifelse(rev < quantile(rev,0.333),"q1",
                                                    ifelse(rev < quantile(rev,0.666),"q2","q3"))
                            ,by=.(yearmon)]
   return(dt_monthly)

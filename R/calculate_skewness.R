@@ -17,10 +17,10 @@ calculate_skewness_rank <- function(dt){
                               coskew=(lm(daily_returns ~ mkt_prem^2)$coefficients[2])),
                            by=.(yearmon,firms)])
   
-  skewness[,iskew_rank:=ifelse(iskew < quantile(iskew,0.333),"iS-",
-                      ifelse(iskew < quantile(iskew,0.666),"iS0","iS+")),by=.(yearmon)]
-  skewness[,coskew_rank:=ifelse(coskew < quantile(coskew,0.333),"coS-",
-                            ifelse(coskew < quantile(coskew,0.666),"coS0","coS+")),by=.(yearmon)]
+  skewness[,ISKEW_rank:=ifelse(iskew < quantile(iskew,0.333),"q1",
+                      ifelse(iskew < quantile(iskew,0.666),"q2","q3")),by=.(yearmon)]
+  skewness[,SSKEW_rank:=ifelse(coskew < quantile(coskew,0.333),"q1",
+                            ifelse(coskew < quantile(coskew,0.666),"q2","q3")),by=.(yearmon)]
   #change dates to next month date in order to merge with the returns 
   #and also to represent IV correctly since it is for the previous month
   #by definition

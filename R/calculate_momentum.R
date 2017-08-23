@@ -22,18 +22,18 @@ calculate_momentum_rank <-function(dt,portfolio_only=F){
   
   if(portfolio_only){
     
-    dt_monthly[,mom_rank:=ifelse(roc < quantile(roc,.333),"WML-L",
-                                    ifelse(roc < quantile(roc,.666),"WML-N","WML-W")),
+    dt_monthly[,MOM_rank:=ifelse(roc < quantile(roc,.333),"q1",
+                                    ifelse(roc < quantile(roc,.666),"q2","q3")),
        by=.(yearmon)]
     
-    dt_monthly <- dt_monthly[,.(yearmon,firms,roc,mom_rank)]
+    dt_monthly <- dt_monthly[,.(yearmon,firms,roc,MOM_rank)]
     
   }else{
     
-    dt_monthly[size=="big",mom_rank:=ifelse(roc < quantile(roc,.333),"BL",
+    dt_monthly[size=="big",MOM_rank:=ifelse(roc < quantile(roc,.333),"BL",
                                               ifelse(roc < quantile(roc,.666),"BN","BW")),
                     by=.(yearmon)]
-    dt_monthly[size=="small",mom_rank:=ifelse(roc < quantile(roc,.333),"SL",
+    dt_monthly[size=="small",MOM_rank:=ifelse(roc < quantile(roc,.333),"SL",
                                     ifelse(roc < quantile(roc,.666),"SN","SW")),
        by=.(yearmon)]
 }

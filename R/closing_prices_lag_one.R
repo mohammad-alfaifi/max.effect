@@ -17,7 +17,7 @@ calculate_monthly_cl_prices_rank <- function(dt){
   dt_monthly <- dt_monthly[,lag_prices:=shift(prices,1L, type="lag"),by=.(firms)]
   dt_monthly <- na.omit(dt_monthly[,-c("dates","prices"),with=F])
   
-  dt_monthly <- dt_monthly[,cl_prices_rank:=ifelse(lag_prices < quantile(lag_prices,0.333),"q1",
+  dt_monthly <- dt_monthly[,CP_rank:=ifelse(lag_prices < quantile(lag_prices,0.333),"q1",
                                               ifelse(lag_prices < quantile(lag_prices,0.666),"q2","q3"))
                            ,by=.(yearmon)]
   return(dt_monthly)

@@ -17,7 +17,7 @@ calculate_monthly_size_rank <- function(dt){
   dt_monthly <- dt_monthly[,lag_mv:=shift(log_mv,1L, type="lag"),by=.(firms)]
   dt_monthly <- na.omit(dt_monthly[,-c("dates","log_mv"),with=F])
   
-  dt_monthly <- dt_monthly[,size_rank:=ifelse(lag_mv < quantile(lag_mv,0.333),"q1",
+  dt_monthly <- dt_monthly[,Size_rank:=ifelse(lag_mv < quantile(lag_mv,0.333),"q1",
                                               ifelse(lag_mv < quantile(lag_mv,0.666),"q2","q3"))
                            ,by=.(yearmon)]
   

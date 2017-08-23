@@ -14,38 +14,56 @@ calculate_double_sorted_alpha <- function(dt){
 
 
 
-  size <- get_factor_controlled_portfolio_stats(dt,"size_rank",levels(dt$size_rank))
-  bm <- get_factor_controlled_portfolio_stats(dt,"bm_rank",levels(dt$bm_rank))
-  cl <- get_factor_controlled_portfolio_stats(dt,"cl_prices_rank",levels(dt$cl_prices_rank))
-  rev <- get_factor_controlled_portfolio_stats(dt,"rev_rank",levels(dt$rev_rank))
-  mom <- get_factor_controlled_portfolio_stats(dt,"mom_rank",levels(dt$mom_rank))
-  coskew <- get_factor_controlled_portfolio_stats(dt,"coskew_rank",levels(dt$coskew_rank))
-  iskew <- get_factor_controlled_portfolio_stats(dt,"iskew_rank",levels(dt$iskew_rank))
-  illiq <- get_factor_controlled_portfolio_stats(dt,"illiq_rank",levels(dt$illiq_rank))
-  iv <- get_factor_controlled_portfolio_stats(dt,"iv_rank",levels(dt$iv_rank))
-
-
-
+  size <- get_factor_controlled_portfolio_stats(dt,"Size_rank",levels(dt$Size_rank))
+  bm <- get_factor_controlled_portfolio_stats(dt,"BM_rank",levels(dt$BM_rank))
+  cl <- get_factor_controlled_portfolio_stats(dt,"CP_rank",levels(dt$CP_rank))
+  rev <- get_factor_controlled_portfolio_stats(dt,"Rev_rank",levels(dt$Rev_rank))
+  mom <- get_factor_controlled_portfolio_stats(dt,"MOM_rank",levels(dt$MOM_rank))
+  coskew <- get_factor_controlled_portfolio_stats(dt,"SSKEW_rank",levels(dt$SSKEW_rank))
+  iskew <- get_factor_controlled_portfolio_stats(dt,"ISKEW_rank",levels(dt$ISKEW_rank))
+  illiq <- get_factor_controlled_portfolio_stats(dt,"ILLIQ_rank",levels(dt$ILLIQ_rank))
+  iv <- get_factor_controlled_portfolio_stats(dt,"IV_rank",levels(dt$IV_rank))
 
   e_p<-rbind(size,bm,cl,rev,mom,coskew,iskew,illiq,iv)
+  e_p[1]<-round(e_p[1],3)
+  e_p[2]<-round(e_p[2],2)
+
+  e_p$estimate<-ifelse(e_p$p.value<=.01,paste( e_p$estimate,"***"),
+                          ifelse(e_p$p.value<=.05,paste(e_p$estimate,"**"),
+                                 ifelse(e_p$p.value<=.1,paste(e_p$estimate,"*"),
+                                        e_p$estimate)) )
+
+   e_p <- format_table_output(e_p)
 
 
-  size_v <- get_factor_controlled_portfolio_stats(dt,"size_rank",levels(dt$size_rank),is_e_weighted = F)
-  bm_v <- get_factor_controlled_portfolio_stats(dt,"bm_rank",levels(dt$bm_rank),is_e_weighted = F)
-  cl_v <- get_factor_controlled_portfolio_stats(dt,"cl_prices_rank",levels(dt$cl_prices_rank),is_e_weighted = F)
-  rev_v <- get_factor_controlled_portfolio_stats(dt,"rev_rank",levels(dt$rev_rank),is_e_weighted = F)
-  mom_v <- get_factor_controlled_portfolio_stats(dt,"mom_rank",levels(dt$mom_rank),is_e_weighted = F)
-  coskew_v <- get_factor_controlled_portfolio_stats(dt,"coskew_rank",levels(dt$coskew_rank),is_e_weighted = F)
-  iskew_v <- get_factor_controlled_portfolio_stats(dt,"iskew_rank",levels(dt$iskew_rank),is_e_weighted = F)
-  illiq_v <- get_factor_controlled_portfolio_stats(dt,"illiq_rank",levels(dt$illiq_rank),is_e_weighted = F)
-  iv_v <- get_factor_controlled_portfolio_stats(dt,"iv_rank",levels(dt$iv_rank),is_e_weighted = F)
+  size_v <- get_factor_controlled_portfolio_stats(dt,"Size_rank",levels(dt$Size_rank),is_e_weighted = F)
+  bm_v <- get_factor_controlled_portfolio_stats(dt,"BM_rank",levels(dt$BM_rank),is_e_weighted = F)
+  cl_v <- get_factor_controlled_portfolio_stats(dt,"CP_rank",levels(dt$CP_rank),is_e_weighted = F)
+  rev_v <- get_factor_controlled_portfolio_stats(dt,"Rev_rank",levels(dt$Rev_rank),is_e_weighted = F)
+  mom_v <- get_factor_controlled_portfolio_stats(dt,"MOM_rank",levels(dt$MOM_rank),is_e_weighted = F)
+  coskew_v <- get_factor_controlled_portfolio_stats(dt,"SSKEW_rank",levels(dt$SSKEW_rank),is_e_weighted = F)
+  iskew_v <- get_factor_controlled_portfolio_stats(dt,"ISKEW_rank",levels(dt$ISKEW_rank),is_e_weighted = F)
+  illiq_v <- get_factor_controlled_portfolio_stats(dt,"ILLIQ_rank",levels(dt$ILLIQ_rank),is_e_weighted = F)
+  iv_v <- get_factor_controlled_portfolio_stats(dt,"IV_rank",levels(dt$IV_rank),is_e_weighted = F)
 
 
 
 
   v_p<-rbind(size_v,bm_v,cl_v,rev_v,mom_v,coskew_v,iskew_v,illiq_v,iv_v)
+  v_p[1]<-round(v_p[1],3)
+  v_p[2]<-round(v_p[2],2)
+  
+  #v_p[2]<-lapply(v_p[,2],round,2)
+  
 
-  alphas_double_sorted <-cbind(e_p,v_p)
+  v_p$estimate<-ifelse(v_p$p.value<=.01,paste( v_p$estimate,"***"),
+                       ifelse(v_p$p.value<=.05,paste(v_p$estimate,"**"),
+                              ifelse(v_p$p.value<=.1,paste(v_p$estimate,"*"),
+                                     v_p$estimate)) )
+
+  v_p <- format_table_output(v_p)
+  
+  alphas_double_sorted <-as.data.table(cbind(e_p,v_p))
 
   return(alphas_double_sorted)
 }
@@ -118,6 +136,56 @@ get_factor_controlled_portfolio_stats <- function(dt,factor_rank_name,factor_ran
 
 }
 
+
+#' format alphas table
+#' @description It take an alpha table with 81 columns
+#' and change their format to long format to end up with three columns only
+#'@param alphas_table  data table with alphas and p-vakues
+
+#'@return \code{dt} data table with alpha and p value  in three columns 
+#' @import data.table
+#' @importFrom zoo yearmon
+#'@export
+#'
+
+format_table_output<-function(alphas_table){
+  
+  alphas_table$factor <- gsub("_", "-", alphas_table$factor)
+  alphas_table$factor <- gsub("q1", "L", alphas_table$factor)
+  
+  alphas_table$factor <- gsub("q2", "M", alphas_table$factor)
+  alphas_table$factor <- gsub("q3", "H", alphas_table$factor)
+  alphas_table$factor <- gsub("-rank", "", alphas_table$factor)
+  alphas_table$factor <- gsub("max","MAX",alphas_table$factor)
+  alphas_table$p.value <- paste("(",alphas_table$p.value,")")
+  
+  alphas_table<-separate(alphas_table,factor,c("max","factor2"),sep="-MAX-")
+  alphas_table<-data.table(t(alphas_table))
+  
+  i<-seq(1,79,3)
+  
+  for (j in i){
+    
+    three_col_values <- alphas_table[,j:(j+2)]
+    colnames(three_col_values)<-as.character(as.matrix(three_col_values[3,]))
+    three_col_values<-three_col_values[-3,]
+    three_col_values$factor<-as.character(as.matrix(three_col_values[3,]))[1]
+    three_col_values<-three_col_values[-3,]
+    
+    if(j==1){
+      formated_table<-data.frame(three_col_values)
+    }else{
+      formated_table<-rbind(formated_table,three_col_values)
+    }
+  }
+  
+  print(colnames(formated_table))
+  formated_table <- formated_table[,.(factor,L,M,H)]
+  colnames(formated_table)<-c("factor", "L-MAX","M-MAX","H-MAX")
+  
+  return(formated_table)
+  
+}
 
 
 ######################Unsure about the code below yet#############################

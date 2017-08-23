@@ -20,7 +20,7 @@ get_factor_controlled_portfolio_stats(dt, factor_rank_name, factor_ranking,
 \code{dt} data table with alpha and p value of nine double sorted portfolios
 }
 \description{
-It extracts the portfolio which corsponds to the factor_rank_name
+It extracts the portfolio which corresponds to the factor_rank_name
 from the received data table, then it calculates the portfolio's return and
 regresses it against fama-french three factors
 }

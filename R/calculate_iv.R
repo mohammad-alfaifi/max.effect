@@ -25,7 +25,7 @@ calculate_iv_rank <- function(dt,portfolio_only=F){
   #by definition
   iv$yearmon <- iv$yearmon + (1/12)
 
-  iv[,iv_rank:=ifelse(IV < quantile(IV,0.333),"q1",
+  iv[,IV_rank:=ifelse(IV < quantile(IV,0.333),"q1",
                       ifelse(IV < quantile(IV,0.666),"q2","q3")),by=.(yearmon)]
   
   #get the value for the end of the month for each firm to merge
