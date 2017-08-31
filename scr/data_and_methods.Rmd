@@ -43,3 +43,7 @@ The SMB and HML factors are calculated as following:
 
 WML = 1/2 (Small High + Big High)
 – 1/2 (Small Low + Big Low).
+
+```{r}
+```
+

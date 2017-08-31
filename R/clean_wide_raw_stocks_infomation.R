@@ -32,7 +32,7 @@ clean_wide_raw_stocks_infomation=function(raw_stocks_info_file,rf_daily_file,
   tbl$dates <- as.Date(tbl$dates,format="%d/%m/%Y")
 
   #to remove the 's' entry in the venz data
-  tbl <- tbl[tbl$dates > "1990-01-05",]
+  # tbl <- tbl[tbl$dates > "1990-01-05",]
   tbl[,2:ncol(tbl)]<-lapply(tbl[,2:ncol(tbl)],as.numeric)
 
   tbl <- gather(tbl,firms,values,-dates)

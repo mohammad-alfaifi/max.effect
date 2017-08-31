@@ -4,7 +4,7 @@
 \alias{export_results}
 \title{exporting the analysis results}
 \usage{
-export_results(country_code)
+export_results(country_code = "SA")
 }
 \arguments{
 \item{country_code}{a string character indicating the country code}

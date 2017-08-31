@@ -8,7 +8,7 @@
 #'
 
 
-export_results <- function(country_code){
+export_results <- function(country_code="SA"){
 
 
   if(country_code=="SA"){
@@ -30,12 +30,12 @@ export_results <- function(country_code){
   fama_macbeth_bi<-get_fama_macbeth_bivariate_values(dt_cleaned)
   fama_macbeth_uni<-get_fama_macbeth_univariate_values(dt_cleaned)
 
-  tabels<-list(max=max,max2=max2,max3=max3,max4=max4,max5=max5,alphas=alphas,
+  tabels<-list(dt=dt,dt_cleaned=dt_cleaned,max=max,max2=max2,max3=max3,max4=max4,max5=max5,alphas=alphas,
                fama_macbeth_bi=fama_macbeth_bi,fama_macbeth_uni=fama_macbeth_uni)
 
   for (i in seq_along(tabels)){
 
-    write.csv(tabels[i],paste("data/",country,"/",names(tabels[i]),".csv",sep=""))
+    saveRDS(tabels[i],paste("data/",country_code,"/",names(tabels[i]),".rds",sep=""))
     }
 
   # ew_p_scater<-graph_double_sorted_portfolios_count(dt)
