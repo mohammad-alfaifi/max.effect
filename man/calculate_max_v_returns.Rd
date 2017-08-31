@@ -15,7 +15,7 @@ calculate_max_v_returns(max)
 \description{
 It takes a long-formated data table with daily returns  and calculates
  maxmim return for a firm in a given month and classifying firms accordingly by calling
- calculate_max function. Next, it calculates the value-weighted return for each 
+ calculate_max function. Next, it calculates the value-weighted return for each
  max portfolio: low,med and high. The weight for each portfolio is the total market
  cap for all of its stock divided by the market cap for the total market cap of all the
  three portfolios. The return is then normalised using natural log (1+return)

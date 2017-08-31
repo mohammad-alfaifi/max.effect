@@ -27,12 +27,15 @@ calculate_ff3 <- function(dt, monthly=F,country_code=NULL, save=FALSE){
 
   if(monthly){
     ff3 <- p6[,.(yearmon,smb,hml)]
+    ff3 <- na.omit(merge(ff3,mkt,by="yearmon"))
+
 
   }else{
     ff3 <- p6[,.(dates,smb,hml)]
+    ff3 <- na.omit(merge(ff3,mkt,by="dates"))
+
   }
 
-  ff3 <- na.omit(merge(ff3,mkt))
 
   if(save){
   dataset_file_name <- paste("data/daily_stock_returns",country_code,".rda",sep = "_")
@@ -63,15 +66,15 @@ calculate_market_excess_returns <- function(dt,monthly=F, country_code=NULL, sav
   if(monthly){
     dt <- dt[order(+dates)]
     dt <- dt[,.SD[.N],by=.(yearmon,firms)]
-    dt <- dt[,.(sum_mv=sum(MV)),by= .(yearmon)][order(+yearmon)]
-    dt <- dt[ ,mkt_prem:=log(sum_mv)- shift(log(sum_mv), 1L, type="lag")]
+    dt <- dt[,.(sum_prices=sum(prices)),by= .(yearmon,RF_m)][order(+yearmon)]
+    dt <- dt[ ,mkt_prem:=((log(sum_prices)- shift(log(sum_prices), 1L, type="lag"))-RF_m)]
 
   }else{
-    dt <- dt[,.(sum_mv = sum(MV)),by= .(dates)][order(+dates)]
-    dt <- dt[ ,mkt_prem:=log(sum_mv)- shift(log(sum_mv), 1L, type="lag")]
+    dt <- dt[,.(sum_prices = sum(prices)),by= .(dates,RF)][order(+dates)]
+    dt <- dt[ ,mkt_prem:=((log(sum_prices)- shift(log(sum_prices), 1L, type="lag"))-RF)]
   }
 
-  dt <- na.omit(dt[,-"sum_mv"])
+  dt <- na.omit(dt[,-"sum_prices"])
 
 
 
@@ -186,6 +189,7 @@ get_ew_daily_returns_and_ff3 <- function(dt){
 
   ff3 <- calculate_ff3(dt)
   ew_daily_rt <- calculate_daily_returns(dt)
+  ew_daily_rt$daily_returns <- ew_daily_rt$daily_returns - ew_daily_rt$RF
   returns_with_ff3 <- merge(ff3,ew_daily_rt,by=("dates"))
 
   return(returns_with_ff3)

@@ -15,6 +15,6 @@ calculate_max_e_returns(max)
 \description{
 It takes a long-formated data table with daily returns  and calculates
  maxmim return for a firm in a given month and classifying firms accordingly by calling
- calculate_max function. Next, it calculates the  return for each 
+ calculate_max function. Next, it calculates the  return for each
  max portfolio: low,med and high using ln(Pt1) - ln(Pt0)
 }

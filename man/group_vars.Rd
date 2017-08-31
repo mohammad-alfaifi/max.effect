@@ -4,10 +4,10 @@
 \alias{group_vars}
 \title{group the ranking of various factors}
 \usage{
-group_vars(raw_stocks_info_file, country_code = FALSE, save = FALSE)
+group_vars(dt, country_code = FALSE, save = FALSE)
 }
 \arguments{
-\item{raw_stocks_info_file}{link of the stock information}
+\item{dt}{data table with prices,mv,bm and volume}
 }
 \value{
 \code{dt} data table with stocks nine factors and their ranking

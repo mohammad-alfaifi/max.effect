@@ -4,13 +4,15 @@
 \alias{clean_wide_raw_stocks_infomation}
 \title{clean raw stocks information}
 \usage{
-clean_wide_raw_stocks_infomation(raw_stocks_info_file, country_code = NULL,
-  save = FALSE)
+clean_wide_raw_stocks_infomation(raw_stocks_info_file, rf_daily_file,
+  rf_monthly_file, country_code = NULL, save = FALSE)
 }
 \arguments{
 \item{raw_stocks_info_file}{linke to datastream file in wide format}
 
 \item{country_code}{the country in which the data belongs to.}
+
+\item{rf_info_file}{links to risk free rate file with 'dates' and 'RF' columns}
 }
 \value{
 \code{dt} with volum,prices,market value and book value

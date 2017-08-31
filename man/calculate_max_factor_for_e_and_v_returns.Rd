@@ -4,7 +4,8 @@
 \alias{calculate_max_factor_for_e_and_v_returns}
 \title{calculate returns for max for equally and value weighted portfolio}
 \usage{
-calculate_max_factor_for_e_and_v_returns(dt, portfolio = F, weighted = F)
+calculate_max_factor_for_e_and_v_returns(dt, portfolio = F, is_ew = T,
+  n = 1)
 }
 \arguments{
 \item{e_rt}{data table with daily  equilly weighted returns}
@@ -16,6 +17,6 @@ returns}
 \code{dt} with max_factor for both equally and value weighted returns
 }
 \description{
-It takes a long-formated data table with daily return and calculates 
+It takes a long-formated data table with daily return and calculates
 max factors for for equally and value weighted portfolio
 }

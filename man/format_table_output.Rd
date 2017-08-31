@@ -4,10 +4,12 @@
 \alias{format_table_output}
 \title{format alphas table}
 \usage{
-format_table_output(alphas_table)
+format_table_output(alphas_table, is_ew = T)
 }
 \arguments{
 \item{alphas_table}{data table with alphas and p-vakues}
+
+\item{is_ew}{logical, if TRUE, it changes the name of the factor column to EW(equially-weighted)}
 }
 \value{
 \code{dt} data table with alpha and p value  in three columns

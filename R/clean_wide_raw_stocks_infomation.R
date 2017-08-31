@@ -9,6 +9,7 @@
 #'  information are avaiable.
 #'
 #'@param raw_stocks_info_file  linke to datastream file in wide format
+#'@param rf_info_file links to risk free rate file with 'dates' and 'RF' columns
 #'@param country_code the country in which the data belongs to.
  #'@return \code{dt} with volum,prices,market value and book value
 #' @import data.table
@@ -21,17 +22,21 @@
 #'@export
 #'
 
-clean_wide_raw_stocks_infomation=function(raw_stocks_info_file,country_code=NULL,save=FALSE)
+clean_wide_raw_stocks_infomation=function(raw_stocks_info_file,rf_daily_file,
+                                          rf_monthly_file,country_code=NULL,save=FALSE)
 {
   #use tbl to exclude error colums
   tbl <- as.tbl(read.csv(raw_stocks_info_file))
   tbl <- select(tbl,-starts_with("X.ERROR"))
-  df <- as.data.frame(tbl)
-
   #change to long format to easily work with data
-  df$dates <- as.Date(df$dates,format="%d/%m/%y")
-  df <- gather(df,firms,values,-dates)
-  dt <- as.data.table(df)
+  tbl$dates <- as.Date(tbl$dates,format="%d/%m/%Y")
+
+  #to remove the 's' entry in the venz data
+  tbl <- tbl[tbl$dates > "1990-01-05",]
+  tbl[,2:ncol(tbl)]<-lapply(tbl[,2:ncol(tbl)],as.numeric)
+
+  tbl <- gather(tbl,firms,values,-dates)
+  dt <- as.data.table(tbl)
 
 
   ############################################################
@@ -106,6 +111,26 @@ clean_wide_raw_stocks_infomation=function(raw_stocks_info_file,country_code=NULL
 
   #removing the year column for cleaningup
   stocks_info_cleaned <- stocks_info_cleaned[,-("year"),with=F]
+
+  ############################################################################
+  #adding daily risk free rate and monthly risk free rate
+  ##########################################################################
+
+  #add the daily risk free rate column
+
+  rf_d<-as.data.table(read.csv(rf_daily_file))
+  rf_d$dates <- as.Date(rf_d$dates,format="%d/%m/%Y")
+  rf_d$RF <- rf_d$RF/100
+
+  stocks_info_cleaned <- merge(stocks_info_cleaned,rf_d,by="dates")
+
+  #add monthly risk free rate column
+  rf_m<-as.data.table(read.csv(rf_monthly_file))
+  rf_m$RF_m <- rf_m$RF/100
+  rf_m$dates <- as.Date(rf_m$dates,format="%d/%m/%Y")
+  rf_m$yearmon <- as.yearmon(rf_m$dates)
+  rf_m <- rf_m[,.(yearmon,RF_m)]
+  stocks_info_cleaned <- merge(stocks_info_cleaned,rf_m,by="yearmon")
 
   #have data saved for every country to easily load it later
   if(save){

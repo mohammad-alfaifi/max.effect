@@ -1,10 +1,50 @@
+#' exporting the analysis results
+#' @description It exports the analysis results for a country to csv file
+#' so that they can be used in writing
+#'@param country_code  a string character indicating the country code
+#'@return export analysis results to excel
+#' @import data.table
+#'@export
+#'
 
-main <- function(){
 
-   raw_stocks_info_file <- '/home/moh/Documents/MAX Effect/Data/Raw/tasi-2017.csv'
-  dt <- group_vars(raw_stocks_info_file)
+export_results <- function(country_code){
 
-  alphas <- calculate_double_sorted_alpha(dt)
+
+  if(country_code=="SA"){
+    dt <- clean_wide_raw_stocks_infomation("data/saudi_stocks.csv",
+                                           "data/saudi_rf_d.csv","data/saudi_rf_m.csv")[order(+dates)]
+  }else{
+    dt <- clean_wide_raw_stocks_infomation("data/venz_stocks.csv",
+                                           "data/saudi_rf_d.csv","data/saudi_rf_m.csv")[order(+dates)]
+  }
+  dt_cleaned <- group_vars(dt)
+
+  max<-get_max_ew_and_vw_portfolio_returns(dt,n=1)
+  max2<-get_max_ew_and_vw_portfolio_returns(dt,n=2)
+  max3<-get_max_ew_and_vw_portfolio_returns(dt,n=3)
+  max4<-get_max_ew_and_vw_portfolio_returns(dt,n=4)
+  max5<-get_max_ew_and_vw_portfolio_returns(dt,n=5)
+
+  alphas <- calculate_double_sorted_alpha(dt_cleaned)
+  fama_macbeth_bi<-get_fama_macbeth_bivariate_values(dt_cleaned)
+  fama_macbeth_uni<-get_fama_macbeth_univariate_values(dt_cleaned)
+
+  tabels<-list(max=max,max2=max2,max3=max3,max4=max4,max5=max5,alphas=alphas,
+               fama_macbeth_bi=fama_macbeth_bi,fama_macbeth_uni=fama_macbeth_uni)
+
+  for (i in seq_along(tabels)){
+
+    write.csv(tabels[i],paste("data/",country,"/",names(tabels[i]),".csv",sep=""))
+    }
+
+  # ew_p_scater<-graph_double_sorted_portfolios_count(dt)
+  # ew_p_distrb<-graph_double_sorted_portfolios_count(dt,distrb = T)
+  #
+  # vw_p_scater<-graph_double_sorted_portfolios_count(dt,is_ew=F)
+  # vw_p_distrb<-graph_double_sorted_portfolios_count(dt,is_ew=F, distrb = T)
+
+
 
 
 }
@@ -13,7 +53,7 @@ main <- function(){
 #' group the ranking of various factors
 #' @description It calls functions to calulate the nine factors (e.g. max,iv),then
 #' merge them all in one data table
-#'@param raw_stocks_info_file  link of the stock information
+#'@param dt  data table with prices,mv,bm and volume
 #'@return \code{dt} data table with stocks nine factors and their ranking
 #' @import data.table
 #' @importFrom zoo yearmon
@@ -21,9 +61,9 @@ main <- function(){
 #'
 
 
-group_vars <- function(raw_stocks_info_file,country_code=FALSE,save=FALSE){
+group_vars <- function(dt,country_code=FALSE,save=FALSE){
 
-  dt <- clean_wide_raw_stocks_infomation(raw_stocks_info_file)[order(+dates)]
+
   dt_monthly <- dt[,.SD[.N],by=.(firms,yearmon)][,-"dates"]
   ff3_monthly <- calculate_ff3(dt,monthly = T)
 

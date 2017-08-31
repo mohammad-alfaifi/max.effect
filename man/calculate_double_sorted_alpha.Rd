@@ -7,7 +7,7 @@
 calculate_double_sorted_alpha(dt)
 }
 \arguments{
-\item{raw_stocks_info_file}{link of the stock information}
+\item{dt}{data table with return and ten other factors}
 }
 \value{
 \code{dt} data table with double sorted alpha statstics for both

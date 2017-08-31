@@ -12,7 +12,7 @@ calculate_iv_rank(dt, portfolio_only = F)
 \item{portfolio_only}{{logical} if True returns only iv for each stock}
 }
 \value{
-\code{dt} the orginal data table with  IV value and iv_rank, monthly prices 
+\code{dt} the orginal data table with  IV value and iv_rank, monthly prices
 and market vlaue
 }
 \description{
