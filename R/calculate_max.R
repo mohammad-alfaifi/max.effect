@@ -24,7 +24,8 @@ calculate_max_rank <- function(dt,n=1){
    rank <- dt[,.(firm_rt_rank=rank(daily_returns),daily_returns,dates),
              by=.(yearmon,firms)][order(-firm_rt_rank,-yearmon)]
 
-  max<-rank[,.SD[1:n],by=.(yearmon,firms)][,.(firms_max=mean(daily_returns)),
+  # calculate max 1 or max 2 according to the value of n
+  max<-rank[,.SD[1:n],by=.(yearmon,firms)]  [,.(firms_max=mean(daily_returns)),
                                            by=.(yearmon,firms)]
   max<-na.omit(max)
   max[,max_rank:=ifelse(firms_max < quantile(firms_max,0.333),"q1",ifelse(firms_max < quantile(firms_max,0.666),"q2","q3")),by=.(yearmon)]
@@ -238,7 +239,8 @@ calculate_max_portfolio_alpha_and_raw_returns<-function(max_ps,is_ew,dt){
 #'@export
 #'
 calculate_max_portfolio_alpha_or_raw_returns<-function(max_ps,alphas=T){
-  rt_avg<-data.table()
+
+   rt_avg<-data.table()
   for(i in 1:4){
     y=as.name(paste("q",i,sep=""))
     if(alphas){
@@ -246,7 +248,7 @@ calculate_max_portfolio_alpha_or_raw_returns<-function(max_ps,alphas=T){
     }else{
       q<-lm(eval(y)~1,data=max_ps)
     }
-    r_q<-tidy(coeftest(q,vcov. = NeweyWest(q,prewhite = F,adjust = T)))[1,c(2,5)]
+    r_q<-tidy(coeftest(q,vcov. = vcovHC(q,"HC1")))[1,c(2,5)]
     r_q$factor<-ifelse(i==1,"L-MAX",ifelse(i==2,"M-MAX",ifelse(i==3,"H-MAX","HMAX-LMAX")))
 
     if(i==1){

@@ -25,8 +25,17 @@
 clean_wide_raw_stocks_infomation=function(raw_stocks_info_file,rf_daily_file,
                                           rf_monthly_file,country_code=NULL,save=FALSE)
 {
+
+
+  # raw_stocks_info_file <- "data/saudi_stocks.csv"
+   # rf_daily_file <-"data/southkorea_rf_d.csv"
+   # rf_monthly_file <- "data/southkorea_rf_m.csv"
+   #
+   #
+
   #use tbl to exclude error colums
   tbl <- as.tbl(read.csv(raw_stocks_info_file))
+  names(tbl)[1]<-"dates"
   tbl <- select(tbl,-starts_with("X.ERROR"))
   #change to long format to easily work with data
   tbl$dates <- as.Date(tbl$dates,format="%d/%m/%Y")
@@ -52,8 +61,10 @@ clean_wide_raw_stocks_infomation=function(raw_stocks_info_file,rf_daily_file,
   names(StockVolume)[3]<- "Vol"
 
     #to extract the prices info
-  StockPrices <- dt[!(firms %like% "MARKET.VALUE") & !(firms %like% "MRKT.VALUE.TO.BOOK") & !(firms %like% "TURNOVER.BY.VOLUME"),]
-  names(StockPrices)[3] <- "prices"
+  StockPrices <- dt[firms %like% "...TOT.RETURN.IND",]
+  StockPrices$firms <- gsub("...TOT.RETURN.IND", "", StockPrices$firms)
+  names(StockPrices)[3]<- "prices"
+
 
   #to exttract bookvalues
   BookValue <- dt[firms %like% "BOOK",]
@@ -119,17 +130,27 @@ clean_wide_raw_stocks_infomation=function(raw_stocks_info_file,rf_daily_file,
   #add the daily risk free rate column
 
   rf_d<-as.data.table(read.csv(rf_daily_file))
+  names(rf_d)<-c("dates", "RF")
+
+  rf_d$dates<-as.Date(rf_d$dates)
   rf_d$dates <- as.Date(rf_d$dates,format="%d/%m/%Y")
-  rf_d$RF <- rf_d$RF/100
+  rf_d$RF <- 0
+  #rf_d$RF <- rf_d$RF/100
 
   stocks_info_cleaned <- merge(stocks_info_cleaned,rf_d,by="dates")
 
   #add monthly risk free rate column
   rf_m<-as.data.table(read.csv(rf_monthly_file))
-  rf_m$RF_m <- rf_m$RF/100
+  names(rf_m)<-c("dates", "RF_m")
+
+  rf_m$RF_m <- 0
+  #rf_m$RF_m <- rf_m$RF/100
+  rf_m$dates<-as.Date(rf_m$dates)
   rf_m$dates <- as.Date(rf_m$dates,format="%d/%m/%Y")
   rf_m$yearmon <- as.yearmon(rf_m$dates)
   rf_m <- rf_m[,.(yearmon,RF_m)]
+
+  #adding monthly risk free rate column
   stocks_info_cleaned <- merge(stocks_info_cleaned,rf_m,by="yearmon")
 
   #have data saved for every country to easily load it later

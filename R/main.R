@@ -12,9 +12,10 @@ export_results <- function(country_code="SA"){
 
 
   if(country_code=="SA"){
-    dt <- clean_wide_raw_stocks_infomation("data/saudi_stocks.csv",
-                                           "data/saudi_rf_d.csv","data/saudi_rf_m.csv")[order(+dates)]
-  }else{
+    dt <- clean_wide_raw_stocks_infomation("data/southkorea_stocks.csv",
+                                           "data/southkorea_rf_d.csv","data/southkorea_rf_m.csv")[order(+dates)]
+
+    }else{
     dt <- clean_wide_raw_stocks_infomation("data/venz_stocks.csv",
                                            "data/saudi_rf_d.csv","data/saudi_rf_m.csv")[order(+dates)]
   }
