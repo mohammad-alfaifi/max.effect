@@ -86,10 +86,10 @@ calculate_portfolios_count_for_double_sorted_alpha<- function(dt,factor_rank_nam
         colnames(q)[which(colnames(q)=="portfolio_returns")]<-eval(portfolio_returns)
       }else{
         q <- dt[eval(factor_rank_name)== eval(factor_ranking[i]) &
-                  max_rank == eval(max_ranking[j]),.(sum_prices=sum(prices)),
-                by=.(yearmon,smb,hml,mkt_prem)][,eval(portfolio_returns):=log(sum_prices)-
-                                                  shift(log(sum_prices),1L,type="lag")]
-        q<-q[,-"sum_prices"]
+                  max_rank == eval(max_ranking[j]),.(sum_mvs=sum(MV)),
+                by=.(yearmon,smb,hml,mkt_prem)][,eval(portfolio_returns):=log(sum_mvs)-
+                                                  shift(log(sum_mvs),1L,type="lag")]
+        q<-q[,-"sum_mvs"]
       }
 
 
@@ -214,10 +214,10 @@ get_factor_controlled_portfolio_stats <- function(dt,factor_rank_name,portfolio=
       }else{
 
         q <- dt[eval(factor_rank_name)== eval(factor_ranking[i]) &
-                  max_rank == eval(max_ranking[j]),.(sum_prices=sum(prices)),
-                by=.(yearmon,smb,hml,mkt_prem)][,eval(portfolio_returns):=log(sum_prices)-
-                                                  shift(log(sum_prices),1L,type="lag")]
-        q<-q[,-"sum_prices"]
+                  max_rank == eval(max_ranking[j]),.(sum_mvs=sum(MV)),
+                by=.(yearmon,smb,hml,mkt_prem)][,eval(portfolio_returns):=log(sum_mvs)-
+                                                  shift(log(sum_mvs),1L,type="lag")]
+        q<-q[,-"sum_mvs"]
 
         }
 
@@ -344,9 +344,6 @@ get_avg_max_protfolios<-function(data,factor_rank_name){
 #'@param dt  data table with the return of a double sorted portfolio
 #'@return \code{dt} data table with the alphas for each double sorted portfolio
 #' @import data.table
-#' @importFrom broom tidy
-#' @importFrom lmtest coeftest
-#' @importFrom sandwich NeweyWest
 #' @export
 calculate_alphas<-function(dt){
 
@@ -354,7 +351,7 @@ calculate_alphas<-function(dt){
   for (n in 5:20){
     y=as.name(colnames(dt)[n])
     mod <- lm(eval(y)~hml+smb+mkt_prem,data=dt)
-   alpha <-  tidy(coeftest(mod,vcov. = NeweyWest(mod,prewhite = F,adjust = T)))[1,c(2,5)]
+   alpha <- roubst_se(mod)
     alpha$factor<-colnames(dt)[n]
 
     rownames(alpha)<-1:nrow(alpha)

@@ -28,8 +28,8 @@ export_results <- function(country_code="SA"){
   max5<-get_max_ew_and_vw_portfolio_returns(dt,n=5)
 
   alphas <- calculate_double_sorted_alpha(dt_cleaned)
-  fama_macbeth_bi<-get_fama_macbeth_bivariate_values(dt_cleaned)
   fama_macbeth_uni<-get_fama_macbeth_univariate_values(dt_cleaned)
+  fama_macbeth_bi<-get_fama_macbeth_bivariate_values(dt_cleaned)
 
   tabels<-list(dt=dt,dt_cleaned=dt_cleaned,max=max,max2=max2,max3=max3,max4=max4,max5=max5,alphas=alphas,
                fama_macbeth_bi=fama_macbeth_bi,fama_macbeth_uni=fama_macbeth_uni)

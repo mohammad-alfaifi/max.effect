@@ -80,12 +80,12 @@ calculate_max_e_returns<- function(max){
 #'
 
 calculate_max_v_returns <- function(max){
+  print(colnames(max))
+  max_rt <- max[,.(sum_mvs = sum(MV)),by=.(max_rank,yearmon)][order(+yearmon)]
 
-  max_rt <- max[,.(sum_prices = sum(prices)),by=.(max_rank,yearmon)][order(+yearmon)]
-
-  max_rt <- max_rt[,portfolio_return:= log(sum_prices)-shift(log(sum_prices),1L, type="lag"),
+  max_rt <- max_rt[,portfolio_return:= log(sum_mvs)-shift(log(sum_mvs),1L, type="lag"),
                    by=.(max_rank)]
-  max_rt <- na.omit(max_rt[,-("sum_prices"),with=F])
+  max_rt <- na.omit(max_rt[,-("sum_mvs"),with=F])
 
   return(max_rt)
 }
@@ -233,9 +233,6 @@ calculate_max_portfolio_alpha_and_raw_returns<-function(max_ps,is_ew,dt){
 #' returns
 #'@return \code{dt} with alpha or raw return for each max rank
 #' @import data.table
-#' @importFrom broom tidy
-#' @importFrom lmtest coeftest
-#' @importFrom sandwich NeweyWest
 #'@export
 #'
 calculate_max_portfolio_alpha_or_raw_returns<-function(max_ps,alphas=T){
@@ -248,7 +245,8 @@ calculate_max_portfolio_alpha_or_raw_returns<-function(max_ps,alphas=T){
     }else{
       q<-lm(eval(y)~1,data=max_ps)
     }
-    r_q<-tidy(coeftest(q,vcov. = vcovHC(q,"HC1")))[1,c(2,5)]
+    #get roubst standard error of the model
+    r_q<-roubst_se(q)
     r_q$factor<-ifelse(i==1,"L-MAX",ifelse(i==2,"M-MAX",ifelse(i==3,"H-MAX","HMAX-LMAX")))
 
     if(i==1){
