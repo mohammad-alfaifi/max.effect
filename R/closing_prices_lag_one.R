@@ -4,21 +4,25 @@
 #' day of each month for each firm, lag them by one, and then classify firms according
 
 #' @param dt data table with daily prices
-#'@return \code{dt} odata table with monthly prices rank  
-#' @import data.table  
+#'@return \code{dt} odata table with monthly prices rank
+#' @import data.table
 #' @importFrom zoo yearmon
 #'@export
 #'
 
-calculate_monthly_cl_prices_rank <- function(dt){
-  
+calculate_monthly_cl_prices_rank <- function(dt,num_cuts,double_sorted=T){
+
   dt <- dt[,.(dates,yearmon,firms,prices)][order(+dates)]
   dt_monthly <- dt[,.SD[.N],by=.(yearmon,firms)][order(+dates)]
   dt_monthly <- dt_monthly[,lag_prices:=shift(prices,1L, type="lag"),by=.(firms)]
   dt_monthly <- na.omit(dt_monthly[,-c("dates","prices"),with=F])
-  
-  dt_monthly <- dt_monthly[,CP_rank:=ifelse(lag_prices < quantile(lag_prices,0.333),"q1",
-                                              ifelse(lag_prices < quantile(lag_prices,0.666),"q2","q3"))
-                           ,by=.(yearmon)]
+
+  #to get different ranks
+  dt_monthly <-cut_portfolio(dt_monthly,"lag_prices","CP_rank",num_cuts)
+
+  dt_monthly$lag_prices<-log(dt_monthly$lag_prices)
+  if(double_sorted){
+    dt_monthly$yearmon<-dt_monthly$yearmon - (1/12)
+  }
   return(dt_monthly)
 }

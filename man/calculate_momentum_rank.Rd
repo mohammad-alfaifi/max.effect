@@ -4,7 +4,7 @@
 \alias{calculate_momentum_rank}
 \title{calculate rate of change and classify firms accordingly}
 \usage{
-calculate_momentum_rank(dt, portfolio_only = F)
+calculate_momentum_rank(dt, portfolio_only = F, num_cuts)
 }
 \arguments{
 \item{dt}{data table with daily prices and size columns}
@@ -15,6 +15,6 @@ calculate_momentum_rank(dt, portfolio_only = F)
 \code{dt} with monthly return, firms, max rank and max value
 }
 \description{
-calculate rate of change based on 11 months and then lag it one  month, and then 
+calculate rate of change based on 11 months and then lag it one  month, and then
 classify #' firms accordingly
 }

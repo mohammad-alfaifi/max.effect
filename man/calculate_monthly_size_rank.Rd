@@ -4,7 +4,7 @@
 \alias{calculate_monthly_size_rank}
 \title{rank firms based on size}
 \usage{
-calculate_monthly_size_rank(dt)
+calculate_monthly_size_rank(dt, num_cuts, double_sorted = F)
 }
 \arguments{
 \item{dt}{data table with daily market cap}

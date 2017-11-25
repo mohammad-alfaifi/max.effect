@@ -16,19 +16,28 @@
 #'
 
 
-calculate_max_rank <- function(dt,n=1){
+calculate_max_rank <- function(dt,n=1,num_cuts=3){
+
+print("hi6")
 
   dt <- calculate_daily_returns(dt)[order(-yearmon,+daily_returns)]
 
   #using rank to get different portfolios
-   rank <- dt[,.(firm_rt_rank=rank(daily_returns),daily_returns,dates),
-             by=.(yearmon,firms)][order(-firm_rt_rank,-yearmon)]
+  #  rank <- dt[,.(firm_rt_rank=rank(daily_returns),daily_returns,dates),
+  #            by=.(yearmon,firms)][order(-firm_rt_rank,-yearmon)]
+  #
+  # # calculate max 1 or max 2 according to the value of n
+  # max<-rank[,.SD[1],by=.(yearmon,firms,firm_rt_rank)]  [,.(firms_max=round(mean(daily_returns),2)),
+  #                                          by=.(yearmon,firms)]
+  # max<-na.omit(max)
 
-  # calculate max 1 or max 2 according to the value of n
-  max<-rank[,.SD[1:n],by=.(yearmon,firms)]  [,.(firms_max=mean(daily_returns)),
-                                           by=.(yearmon,firms)]
-  max<-na.omit(max)
-  max[,max_rank:=ifelse(firms_max < quantile(firms_max,0.333),"q1",ifelse(firms_max < quantile(firms_max,0.666),"q2","q3")),by=.(yearmon)]
+  max<-dt[,.(firms_max=round(max(daily_returns),2)),by=.(yearmon,firms)]
+
+  #max<-max[firms_max>0]
+  #cut max into decile or quntile, etc
+  max<-cut_portfolio(max,"firms_max","max_rank",num_cuts)
+
+
   max$yearmon <- max$yearmon + (1/12)
 
   dt <- dt[order(+dates)]
@@ -56,9 +65,13 @@ calculate_max_rank <- function(dt,n=1){
 calculate_max_e_returns<- function(max){
 
   max_rt <- max[order(+yearmon)]
-  max_rt <- max_rt[,.(portfolio_return=mean(daily_returns)),
-                 by=.(max_rank,yearmon)]
+  max_rt <- max_rt[,monthly_returns:=log(prices)-shift(log(prices), 1L, type="lag"),by=.(firms)]
+  max_rt <- na.omit(max_rt)
+  max_rt <- max_rt[,.(portfolio_return=mean(monthly_returns)),
+                   by=.(max_rank,yearmon,RF_m)]
+  max_rt$portfolio_return <- max_rt$portfolio_return - max_rt$RF_m
 
+  max_rt<-max_rt[,-('RF_m'),with=F]
   return(max_rt)
 
 }
@@ -80,12 +93,15 @@ calculate_max_e_returns<- function(max){
 #'
 
 calculate_max_v_returns <- function(max){
-  print(colnames(max))
-  max_rt <- max[,.(sum_mvs = sum(MV)),by=.(max_rank,yearmon)][order(+yearmon)]
+
+  max_rt <- max[,.(sum_mvs = sum(MV)),by=.(RF_m,max_rank,yearmon)][order(+yearmon)]
 
   max_rt <- max_rt[,portfolio_return:= log(sum_mvs)-shift(log(sum_mvs),1L, type="lag"),
                    by=.(max_rank)]
-  max_rt <- na.omit(max_rt[,-("sum_mvs"),with=F])
+
+  max_rt$portfolio_return <- max_rt$portfolio_return-max_rt$RF_m
+
+  max_rt <- na.omit(max_rt[,-c("sum_mvs","RF_m"),with=F])
 
   return(max_rt)
 }
@@ -104,8 +120,11 @@ calculate_max_v_returns <- function(max){
 #'@export
 #'
 
-calculate_max_factor <- function(max,is_equally_weighted,portfolio=F){
+calculate_max_factor <- function(max,is_equally_weighted,portfolio=F,num_cuts){
 
+  #mark upper portfolio
+
+  highest_rank <- paste("q",num_cuts,sep="")
 
   if(is_equally_weighted==TRUE){
     max_rt <- calculate_max_e_returns(max)
@@ -113,15 +132,14 @@ calculate_max_factor <- function(max,is_equally_weighted,portfolio=F){
     max_rt <- calculate_max_v_returns(max)
   }
 
-  if(portfolio){return(max_rt)}
+  if(portfolio){ return(max_rt) }
 
-  max_rt <- max_rt[max_rank != "q2"]
+ #keep highest rank with the lowest to subtract and consutrcut max factor
+  max_rt <- max_rt[max_rank == "q1" | max_rank == highest_rank]
 
   max_rt_wide<- spread(max_rt,max_rank,portfolio_return)
-  max_rt_wide$max_factor <- max_rt_wide$q3 - max_rt_wide$q1
+  max_rt_wide$max_factor <- max_rt_wide[[highest_rank]] - max_rt_wide$q1
   max_rt_wide <- na.omit(max_rt_wide[,.(yearmon,max_factor)])
-
-
 
   return(max_rt_wide)
 
@@ -142,13 +160,13 @@ calculate_max_factor <- function(max,is_equally_weighted,portfolio=F){
 #'@export
 #'
 
-calculate_max_factor_for_e_and_v_returns <- function(dt,portfolio=F,is_ew=T,n=1){
+calculate_max_factor_for_e_and_v_returns <- function(dt,portfolio=F,is_ew=T,n=1,num_cuts){
 
 
-  max <- calculate_max_rank(dt,n)
+  max <- calculate_max_rank(dt,n,num_cuts)
 
-  e_max <- calculate_max_factor(max,is_equally_weighted = T, portfolio)
-  v_max <- calculate_max_factor(max,is_equally_weighted = F, portfolio)
+  e_max <- calculate_max_factor(max,is_equally_weighted = T, portfolio,num_cuts)
+  v_max <- calculate_max_factor(max,is_equally_weighted = F, portfolio,num_cuts)
 
   if(portfolio ){
 
@@ -177,14 +195,14 @@ calculate_max_factor_for_e_and_v_returns <- function(dt,portfolio=F,is_ew=T,n=1)
 #' @import data.table
 #'@export
 #'
-get_max_ew_and_vw_portfolio_returns <- function(dt,n=1){
-  e_max_ps<-calculate_max_factor_for_e_and_v_returns(dt,portfolio=T,is_ew=T,n)
-  ew_rt<-calculate_max_portfolio_alpha_and_raw_returns(e_max_ps,is_ew=T,dt)
+get_max_ew_and_vw_portfolio_returns <- function(dt,n=1,num_cuts){
+  e_max_ps<-calculate_max_factor_for_e_and_v_returns(dt,portfolio=T,is_ew=T,n,num_cuts)
+  ew_rt<-calculate_max_portfolio_alpha_and_raw_returns(e_max_ps,is_ew=T,dt,num_cuts)
 
-  v_max_ps<-calculate_max_factor_for_e_and_v_returns(dt,portfolio=T,is_ew=F,n)
-  vw_rt<-calculate_max_portfolio_alpha_and_raw_returns(v_max_ps,is_ew=F,dt)
+  v_max_ps<-calculate_max_factor_for_e_and_v_returns(dt,portfolio=T,is_ew=F,n,num_cuts)
+  vw_rt<-calculate_max_portfolio_alpha_and_raw_returns(v_max_ps,is_ew=F,dt,num_cuts)
   max_avg_returns<-cbind(ew_rt,vw_rt)
-  max_avg_returns<-max_avg_returns[,c(5,1:4,10,6:9)]
+
 
   return(max_avg_returns)
 }
@@ -203,20 +221,29 @@ get_max_ew_and_vw_portfolio_returns <- function(dt,n=1){
 #' @import data.table
 #'@export
 #'
-calculate_max_portfolio_alpha_and_raw_returns<-function(max_ps,is_ew,dt){
-#HMAX-LMAX max return on ff3
+calculate_max_portfolio_alpha_and_raw_returns<-function(max_ps,is_ew,dt,num_cuts){
+
+  highest_rank <- paste("q",num_cuts,sep="")
+  highest_portfolio <- paste("q",(num_cuts+1),sep = "")
+  #HMAX-LMAX max return on ff3
   max_ps<-spread(max_ps,max_rank,portfolio_return)
-  max_ps$q4<-max_ps$q3-max_ps$q1
-  ff3_m<-calculate_ff3(dt,monthly = T)
+  #create High-Low Max
+  max_ps[[highest_portfolio]] <- max_ps[[highest_rank]] - max_ps$q1
+
+  #ff3_m<-calculate_ff3(dt,monthly = T)
+  ff3_m<-calculate_US_ff3()
+
   max_ps<-merge(max_ps,ff3_m,by="yearmon")
+
+
   #regression results
 
-  max_alphas<-calculate_max_portfolio_alpha_or_raw_returns(max_ps,alphas=T)
-  max_raw_rt<-calculate_max_portfolio_alpha_or_raw_returns(max_ps,alphas=F)
+  max_alphas<-calculate_max_portfolio_alpha_or_raw_returns(max_ps,alphas=T,num_cuts)
+  max_raw_rt<-calculate_max_portfolio_alpha_or_raw_returns(max_ps,alphas=F,num_cuts)
 
 
-  max_alphas<-round_and_format(max_alphas)
-  max_raw_rt<-round_and_format(max_raw_rt,alphas = F)
+  max_alphas<-round_and_format(max_alphas,alphas = T,num_cuts)
+  max_raw_rt<-round_and_format(max_raw_rt,alphas = F,num_cuts)
 
   max_rt<-rbind(max_raw_rt,max_alphas)
 
@@ -235,24 +262,27 @@ calculate_max_portfolio_alpha_and_raw_returns<-function(max_ps,is_ew,dt){
 #' @import data.table
 #'@export
 #'
-calculate_max_portfolio_alpha_or_raw_returns<-function(max_ps,alphas=T){
+calculate_max_portfolio_alpha_or_raw_returns<-function(max_ps,alphas=T,num_cuts){
 
    rt_avg<-data.table()
-  for(i in 1:4){
+
+
+  for(i in 1:(num_cuts+1)){
     y=as.name(paste("q",i,sep=""))
     if(alphas){
-      q<-lm(eval(y)~smb+hml+mkt_prem,data=max_ps)
+      q<-lm(eval(y)~smb+hml+mkt_prem,data=max_ps,na.action = na.exclude)
     }else{
-      q<-lm(eval(y)~1,data=max_ps)
+      q<-lm(eval(y)~1,data=max_ps,na.action = na.exclude)
     }
     #get roubst standard error of the model
     r_q<-roubst_se(q)
-    r_q$factor<-ifelse(i==1,"L-MAX",ifelse(i==2,"M-MAX",ifelse(i==3,"H-MAX","HMAX-LMAX")))
 
     if(i==1){
       rt_avg<-r_q
+
     }else{
       rt_avg<-rbind(rt_avg,r_q)
+
     }
   }
 
@@ -273,7 +303,7 @@ calculate_max_portfolio_alpha_or_raw_returns<-function(max_ps,alphas=T){
 #' @import data.table
 #'@export
 #'
-round_and_format<-function(avg_rt,alphas=T){
+round_and_format<-function(avg_rt,alphas=T,num_cuts){
 
   avg_rt[,c(1,2)]<-round(avg_rt[,c(1,2)],3)
   avg_rt$estimate<-ifelse(avg_rt$p.value<=.01,paste( avg_rt$estimate,"***"),
@@ -282,10 +312,18 @@ round_and_format<-function(avg_rt,alphas=T){
                                         avg_rt$estimate)) )
   avg_rt$p.value <- paste("(",avg_rt$p.value,")")
 
-
   avg_rt<-data.table(t(avg_rt))
-  colnames(avg_rt)<-as.character(avg_rt[3,])
-  avg_rt<-avg_rt[-3,]
+  if(num_cuts==3){
+    colnames(avg_rt)<-c("Low-Max","Med-Max","High-Max","High-Low-Max")
+  }else{
+    middle_max<-as.character(2:(num_cuts-1))
+    colnames(avg_rt)[1]<-"Low-Max"
+    colnames(avg_rt)[2:(num_cuts-1)]<-middle_max
+    colnames(avg_rt)[num_cuts]<-"High-Max"
+    colnames(avg_rt)[(num_cuts+1)]<-"High-Low-Max"
+    }
+  #colnames(avg_rt)<-as.character(avg_rt[3,])
+  #avg_rt<-avg_rt[-3,]
   avg_rt$factor <- ifelse(alphas==TRUE,"FF-3","Raw")
   avg_rt$factor[duplicated(avg_rt$factor)] <- ""
 

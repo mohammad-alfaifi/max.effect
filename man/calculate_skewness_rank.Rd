@@ -4,7 +4,7 @@
 \alias{calculate_skewness_rank}
 \title{calculate iskewness and coskewness and classify firms accordingly}
 \usage{
-calculate_skewness_rank(dt)
+calculate_skewness_rank(dt, num_cuts, double_sorted = F)
 }
 \arguments{
 \item{dt}{data table with prices, market value and book value}

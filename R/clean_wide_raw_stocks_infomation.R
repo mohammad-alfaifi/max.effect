@@ -11,7 +11,7 @@
 #'@param raw_stocks_info_file  linke to datastream file in wide format
 #'@param rf_info_file links to risk free rate file with 'dates' and 'RF' columns
 #'@param country_code the country in which the data belongs to.
- #'@return \code{dt} with volum,prices,market value and book value
+#'@return \code{dt} with volum,prices,market value and book value
 #' @import data.table
 #' @importFrom  dplyr as.tbl
 #' @importFrom  dplyr select
@@ -27,25 +27,73 @@ clean_wide_raw_stocks_infomation=function(raw_stocks_info_file,rf_daily_file,
 {
 
 
-  # raw_stocks_info_file <- "data/saudi_stocks.csv"
-   # rf_daily_file <-"data/southkorea_rf_d.csv"
-   # rf_monthly_file <- "data/southkorea_rf_m.csv"
-   #
-   #
+ # raw_stocks_info_file <- "data/US_stocks.csv"
+  #rf_daily_file <-"data/US_rf_d.csv"
+   #rf_monthly_file <- "data/US_rf_m.csv"
+  #
+  #
 
   #use tbl to exclude error colums
-  tbl <- as.tbl(read.csv(raw_stocks_info_file))
-  names(tbl)[1]<-"dates"
-  tbl <- select(tbl,-starts_with("X.ERROR"))
+  dt <- as.tbl(read.csv(raw_stocks_info_file))
+  names(dt)[1]<-"dates"
+  dt <- select(dt,-starts_with("X.ERROR"))
   #change to long format to easily work with data
-  tbl$dates <- as.Date(tbl$dates,format="%d/%m/%Y")
+  dt$dates <- as.Date(dt$dates,format="%d/%m/%Y")
+  dt<-dt[dt$dates < "2007-01-01" & dt$dates > "2000-01-01"  ,]
+  #dt<-dt[dt$dates > "2000-01-01" ,]
+
+  print("new2")
 
   #to remove the 's' entry in the venz data
   # tbl <- tbl[tbl$dates > "1990-01-05",]
-  tbl[,2:ncol(tbl)]<-lapply(tbl[,2:ncol(tbl)],as.numeric)
+  dt[,2:ncol(dt)]<-lapply(dt[,2:ncol(dt)],as.numeric)
 
-  tbl <- gather(tbl,firms,values,-dates)
-  dt <- as.data.table(tbl)
+  dt <- gather(dt,firms,values,-dates)
+  dt <- as.data.table(dt)
+
+  dt<-clean_stocks_infomation(dt,rf_daily_file,rf_monthly_file)
+  #bottom_half<-round(nrow(dt)/2,0)
+  #upper_half <- bottom_half+1
+
+  #bottom_dt <- dt[1:bottom_half,]
+  #upper_dt<-dt[upper_half:nrow(dt)]
+  #rm(dt)
+  #bottom_dt<-clean_stocks_infomation(bottom_dt,rf_daily_file,rf_monthly_file)
+  #upper_dt<-clean_stocks_infomation(upper_dt,rf_daily_file,rf_monthly_file)
+
+ # dt<-rbind(bottom_dt,upper_dt)
+
+  return(dt)
+
+}
+#' clean stocks information
+#' @description It takes a wide formated data frame with prices, market value, book balue and volumn
+#'  and changes it to long format. It changes the class of the date column to date, and it adds
+#' a colum for months dates. It excludes dates after july of the last year and before June of the
+#' first year. It creates a years column which marks the year start in Jun and its end in July to
+#' ease fama french three factors calculation later. It changes prices which their volume shows
+#'  NA or zero to zero. It keepsfirms only which their book, market, prices and volume
+#'  information are avaiable.
+#'
+#'@param raw_stocks_info_file  linke to datastream file in wide format
+#'@param rf_info_file links to risk free rate file with 'dates' and 'RF' columns
+#'@param country_code the country in which the data belongs to.
+ #'@return \code{dt} with volum,prices,market value and book value
+#' @import data.table
+#' @importFrom  dplyr as.tbl
+#' @importFrom  dplyr select
+#' @importFrom zoo as.yearmon
+#' @importFrom tidyr gather
+#' @importFrom lubridate year
+
+#'@export
+#'
+
+clean_stocks_infomation=function(dt,rf_daily_file,
+                                          rf_monthly_file,country_code=NULL,save=FALSE)
+{
+
+
 
 
   ############################################################
@@ -70,16 +118,16 @@ clean_wide_raw_stocks_infomation=function(raw_stocks_info_file,rf_daily_file,
   BookValue <- dt[firms %like% "BOOK",]
   BookValue$firms <- gsub("...MRKT.VALUE.TO.BOOK", "", BookValue$firms)
   names(BookValue)[3] <- "BM"
-  BookValue$BM=round(1/BookValue$BM,digits = 2)
-  names(BookValue)[3]<- "BM"
+  BookValue <- BookValue[,BM:=ifelse(BM == 0,0.0,1/BM)]
 
 
   #to extract the market cap info
   MarketValue <- dt[firms %like% "MARKET.VALUE",]
   MarketValue$firms <- gsub("...MARKET.VALUE", "", MarketValue$firms)
   names(MarketValue)[3] <- "MV"
+  #MarketValue<-MarketValue[MV>10000]
 
-
+  rm(dt)
   ############################################################################
 
   #merging vol, prices, bm and mv in one data frame
@@ -88,8 +136,11 @@ clean_wide_raw_stocks_infomation=function(raw_stocks_info_file,rf_daily_file,
 
   #m34ging intwo two stages
   StockPricesANDVol <- merge(StockPrices,StockVolume)
+  rm(StockPrices,StockVolume)
   BookAndMV <- merge(MarketValue,BookValue)
+  rm(MarketValue,BookValue)
   StockInfo <- merge(BookAndMV,StockPricesANDVol)
+  rm(BookAndMV,StockPricesANDVol)
 
 
   #to exclude duplicated prices and easily work with monthly data
@@ -98,7 +149,7 @@ clean_wide_raw_stocks_infomation=function(raw_stocks_info_file,rf_daily_file,
 
   #to have all info
   stocks_info_cleaned <- na.omit(StockInfo)[order(-dates)]
-
+  rm(StockInfo)
   ############################################################################
   #starting data from first june of the first year and ending it
   #at the last july of the last year and creating years variable to show
@@ -131,10 +182,11 @@ clean_wide_raw_stocks_infomation=function(raw_stocks_info_file,rf_daily_file,
 
   rf_d<-as.data.table(read.csv(rf_daily_file))
   names(rf_d)<-c("dates", "RF")
-
-  rf_d$dates<-as.Date(rf_d$dates)
   rf_d$dates <- as.Date(rf_d$dates,format="%d/%m/%Y")
-  rf_d$RF <- 0
+  #get the average number of trading days per year to divide daily RF by it
+  rf_d$year<-year(rf_d$dates)
+  trading_days_count <- rf_d[,.(days_in_year=.N),by=.(year)][,round(mean(days_in_year),0)]
+  rf_d <- rf_d[,.(dates,RF=(RF/100)/trading_days_count)]
   #rf_d$RF <- rf_d$RF/100
 
   stocks_info_cleaned <- merge(stocks_info_cleaned,rf_d,by="dates")
@@ -142,16 +194,16 @@ clean_wide_raw_stocks_infomation=function(raw_stocks_info_file,rf_daily_file,
   #add monthly risk free rate column
   rf_m<-as.data.table(read.csv(rf_monthly_file))
   names(rf_m)<-c("dates", "RF_m")
-
-  rf_m$RF_m <- 0
-  #rf_m$RF_m <- rf_m$RF/100
-  rf_m$dates<-as.Date(rf_m$dates)
-  rf_m$dates <- as.Date(rf_m$dates,format="%d/%m/%Y")
-  rf_m$yearmon <- as.yearmon(rf_m$dates)
+  rf_m$dates<- as.Date(rf_m$dates,format="%d/%m/%Y")
+  rf_m$yearmon<-as.yearmon(rf_m$dates)
+  rf_m<-rf_m[,-'dates',with=F]
+  rf_m$RF_m<-(rf_m$RF_m/100)/12
   rf_m <- rf_m[,.(yearmon,RF_m)]
 
   #adding monthly risk free rate column
   stocks_info_cleaned <- merge(stocks_info_cleaned,rf_m,by="yearmon")
+  rm(rf_m)
+  rm(rf_d)
 
   #have data saved for every country to easily load it later
   if(save){

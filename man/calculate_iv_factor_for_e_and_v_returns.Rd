@@ -4,7 +4,8 @@
 \alias{calculate_iv_factor_for_e_and_v_returns}
 \title{calculate IV factor}
 \usage{
-calculate_iv_factor_for_e_and_v_returns(dt, portfolio = F, weighted = F)
+calculate_iv_factor_for_e_and_v_returns(dt, portfolio = F, weighted = F,
+  num_cuts)
 }
 \arguments{
 \item{dt}{data table of the daily prices, market value and book-to-market

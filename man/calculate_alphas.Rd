@@ -4,7 +4,7 @@
 \alias{calculate_alphas}
 \title{calculate alphas for double sorted portfolios}
 \usage{
-calculate_alphas(dt)
+calculate_alphas(dt, num_cuts)
 }
 \arguments{
 \item{dt}{data table with the return of a double sorted portfolio}

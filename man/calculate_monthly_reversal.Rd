@@ -4,7 +4,7 @@
 \alias{calculate_monthly_reversal}
 \title{rank firms based on the returns of the past month}
 \usage{
-calculate_monthly_reversal(dt)
+calculate_monthly_reversal(dt, num_cuts, double_sorted = F)
 }
 \arguments{
 \item{dt}{data table with daily prices}

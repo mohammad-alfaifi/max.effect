@@ -10,28 +10,45 @@
 #'@export
 #'
 
-calculate_iv_rank <- function(dt,portfolio_only=F){
+calculate_iv_rank <- function(dt,portfolio_only=F,num_cuts,double_sorted=F){
 
-  returns_with_ff3 <- get_ew_daily_returns_and_ff3(dt)
+  #calculate 3 factors model to be used for regression model
+  ff3 <- calculate_ff3(dt)
+  ff3<-ff3[,-"RF",with=F]
+  #calculate indvidual stock excess return
+  returns <- calculate_daily_returns(dt)
+  returns$excess_returns <- returns$daily_returns - returns$RF
+
+  #make ready for regression
+  returns_with_ff3 <- merge(ff3,returns,by=("dates"))
+
 
   #calculate monthly resudials for each firm
-  iv=na.omit(returns_with_ff3[,.(residuals=lm( daily_returns ~ hml + smb + mkt_prem)$residuals),
+  iv=na.omit(returns_with_ff3[,.(residuals=lm( excess_returns ~ hml + smb + mkt_prem)$residuals),
             by=.(yearmon,firms)][,.(residuals_std=sd(residuals),observations_count=.N),
                                  by=.(yearmon,firms)] [,.(IV=(residuals_std*sqrt(observations_count))),
                                                        by=.(yearmon,firms)])
 
+
+
+
+  #to get different ranks
+   iv <-cut_portfolio(iv,"IV","IV_rank",num_cuts)
+
+   if(double_sorted==T){
+     return(iv)
+   }
   #change dates to next month date in order to merge with the returns
   #and also to represent IV correctly since it is for the previous month
   #by definition
   iv$yearmon <- iv$yearmon + (1/12)
 
-  iv[,IV_rank:=ifelse(IV < quantile(IV,0.333),"q1",
-                      ifelse(IV < quantile(IV,0.666),"q2","q3")),by=.(yearmon)]
+
 
   #get the value for the end of the month for each firm to merge
   returns_with_ff3 <- returns_with_ff3[order(+dates)]
   monthly_rt_with_ff3 <- returns_with_ff3[,.SD[.N],by=.(yearmon,firms)]
-  monthly_rt_with_ff3 <- monthly_rt_with_ff3[,.(yearmon,firms,prices,MV)]
+  monthly_rt_with_ff3 <- monthly_rt_with_ff3[,.(yearmon,firms,prices,MV,RF_m)]
 
   dt_monthly <- merge(monthly_rt_with_ff3,iv)
 
@@ -54,8 +71,13 @@ calculate_iv_rank <- function(dt,portfolio_only=F){
 calculate_iv_e_returns <- function(iv){
 
   iv_rt <- iv[order(+yearmon)]
-  iv_rt <- iv_rt[,.(portfolio_return=mean(daily_returns)),
-                   by=.(IV_rank,yearmon)]
+  iv_rt <- iv_rt[,monthly_returns:=log(prices)-shift(log(prices), 1L, type="lag"),by=.(firms)]
+  iv_rt <- na.omit(iv_rt)
+  iv_rt <- iv_rt[,.(portfolio_return=mean(monthly_returns),RF_m),
+                   by=.(IV_rank,yearmon)][!duplicated(portfolio_return)]
+  iv_rt$portfolio_return <- iv_rt$portfolio_return - iv_rt$RF_m
+  iv_rt<-iv_rt[,-('RF_m'),with=F]
+
 
   return(iv_rt)
 }
@@ -73,12 +95,11 @@ calculate_iv_e_returns <- function(iv){
 
 calculate_iv_v_returns <- function(iv){
 
-
-  iv_rt <- iv[,.(sum_prices = sum(prices)),by=.(IV_rank,yearmon)][order(+yearmon)]
-  iv_rt <- iv_rt[,portfolio_return:= log(sum_prices)-shift(log(sum_prices),1L, type="lag"),
+  iv_rt <- iv[,.(sum_mvs = sum(MV),RF_m),by=.(IV_rank,yearmon)][!duplicated(sum_mvs)][order(+yearmon)]
+  iv_rt <- iv_rt[,portfolio_return:= log(sum_mvs)-shift(log(sum_mvs),1L, type="lag"),
                  by=.(IV_rank)]
-  iv_rt <- na.omit(iv_rt[,-("sum_prices"),with=F])
-
+  iv_rt$portfolio_return <- iv_rt$portfolio_return-iv_rt$RF_m
+  iv_rt <- na.omit(iv_rt[,-c("sum_mvs","RF_m"),with=F])
 
   return(iv_rt)
 }
@@ -99,8 +120,9 @@ calculate_iv_v_returns <- function(iv){
 #'
 
 
-calculate_iv_factor <- function(iv,is_equally_weighted,portfolio=F){
+calculate_iv_factor <- function(iv,is_equally_weighted,portfolio=F,num_cuts){
 
+  highest_rank <- paste("q",num_cuts,sep="")
 
    if(is_equally_weighted){
     iv_rt <- calculate_iv_e_returns(iv)
@@ -109,10 +131,11 @@ calculate_iv_factor <- function(iv,is_equally_weighted,portfolio=F){
   }
   if(portfolio){ return(iv_rt) }
 
-  iv_rt <- iv_rt[IV_rank != "q2"]
+  iv_rt <- iv_rt[IV_rank == "q1" | IV_rank == highest_rank]
+
 
   iv_rt_wide<- spread(iv_rt,IV_rank,portfolio_return)
-  iv_rt_wide$iv_factor <- iv_rt_wide$q3 - iv_rt_wide$q1
+  iv_rt_wide$max_factor <- iv_rt_wide[[highest_rank]] - iv_rt_wide$q1
   iv_rt_wide <- na.omit(iv_rt_wide[,.(yearmon,iv_factor)])
 
   return(iv_rt_wide)
@@ -131,12 +154,12 @@ calculate_iv_factor <- function(iv,is_equally_weighted,portfolio=F){
 #'@export
 #'
 
-calculate_iv_factor_for_e_and_v_returns <- function(dt,portfolio=F,weighted=F){
+calculate_iv_factor_for_e_and_v_returns <- function(dt,portfolio=F,weighted=F,num_cuts){
 
-  iv <- calculate_iv_rank(dt)
+  iv <- calculate_iv_rank(dt,num_cuts)
 
-  e_iv <- calculate_iv_factor(iv,is_equally_weighted = T, portfolio)
-  v_iv <- calculate_iv_factor(iv,is_equally_weighted = F, portfolio)
+  e_iv <- calculate_iv_factor(iv,is_equally_weighted = T, portfolio,num_cuts)
+  v_iv <- calculate_iv_factor(iv,is_equally_weighted = F, portfolio,num_cuts)
 
 
   if(portfolio ){

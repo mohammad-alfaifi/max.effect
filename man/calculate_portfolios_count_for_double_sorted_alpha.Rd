@@ -5,13 +5,13 @@
 \title{calculate number of portfolios for double sorted alpha}
 \usage{
 calculate_portfolios_count_for_double_sorted_alpha(dt, factor_rank_name,
-  is_ew = T)
+  is_ew = T, tertile = T)
 }
 \arguments{
 \item{dt}{data table with return and ten other factors}
 }
 \value{
-\code{dt} data table with two coluls:one for date(year or yearmon) and the other
+\code{dt} data table with two columnls:one for date(year or yearmon) and the other
 for the number of portfolios crospoding to the date
 }
 \description{

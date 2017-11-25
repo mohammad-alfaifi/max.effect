@@ -8,24 +8,39 @@
 #'@export
 #'
 
-calculate_skewness_rank <- function(dt){
+calculate_skewness_rank <- function(dt,num_cuts,double_sorted=F){
 
-  daily_ff3 <- get_ew_daily_returns_and_ff3(dt)
+  #calculate fama-french three factors model
+  ff3 <- calculate_ff3(dt)
+  ff3<-ff3[,-"RF",with=F]
+  #calculate indvidual stock excess return
+  returns <- calculate_daily_returns(dt)
+  returns$excess_returns <- returns$daily_returns - returns$RF
+
+  #make ready for regression
+  daily_ff3 <- merge(ff3,returns,by=("dates"))
+
 
   #calculate monthly resudials for each firm
-  skewness=na.omit(daily_ff3[,.(iskew=skewness(lm(daily_returns ~ mkt_prem)$residuals),
-                              coskew=(lm(daily_returns ~ I(mkt_prem^2))$coefficients[2])),
+  skewness=na.omit(daily_ff3[,.(iskew=skewness(lm(excess_returns ~ mkt_prem)$residuals),
+                              coskew=(lm(excess_returns ~ I(mkt_prem^2))$coefficients[2])),
                            by=.(yearmon,firms)])
 
-  skewness[,ISKEW_rank:=ifelse(iskew < quantile(iskew,0.333),"q1",
-                      ifelse(iskew < quantile(iskew,0.666),"q2","q3")),by=.(yearmon)]
-  skewness[,SSKEW_rank:=ifelse(coskew < quantile(coskew,0.333),"q1",
-                            ifelse(coskew < quantile(coskew,0.666),"q2","q3")),by=.(yearmon)]
+
+  #to get different ranks
+  skewness <-cut_portfolio(skewness,"iskew","ISKEW_rank",num_cuts)
+  skewness <-cut_portfolio(skewness,"coskew","SSKEW_rank",num_cuts)
+
+
+
   #change dates to next month date in order to merge with the returns
   #and also to represent IV correctly since it is for the previous month
   #by definition
 
-  skewness$yearmon <- skewness$yearmon + (1/12)
+  if(double_sorted==F){
+    skewness$yearmon <- skewness$yearmon + (1/12)
+
+  }
 
 
   return(skewness)

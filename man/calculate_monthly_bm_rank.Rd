@@ -4,7 +4,7 @@
 \alias{calculate_monthly_bm_rank}
 \title{rank firms based on book-to-market (BM)}
 \usage{
-calculate_monthly_bm_rank(dt)
+calculate_monthly_bm_rank(dt, num_cuts, double_sorted = F)
 }
 \arguments{
 \item{dt}{data table with daily BM}

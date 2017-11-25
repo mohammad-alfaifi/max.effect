@@ -4,7 +4,7 @@
 \alias{calculate_max_portfolio_alpha_or_raw_returns}
 \title{calculates alpha or raw return for a max portfolio}
 \usage{
-calculate_max_portfolio_alpha_or_raw_returns(max_ps, alphas = T)
+calculate_max_portfolio_alpha_or_raw_returns(max_ps, alphas = T, num_cuts)
 }
 \arguments{
 \item{alphas}{logical, if True, it calculates the alpha return

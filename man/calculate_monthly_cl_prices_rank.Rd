@@ -4,7 +4,7 @@
 \alias{calculate_monthly_cl_prices_rank}
 \title{rank firms based on closing price of the past month}
 \usage{
-calculate_monthly_cl_prices_rank(dt)
+calculate_monthly_cl_prices_rank(dt, num_cuts, double_sorted = T)
 }
 \arguments{
 \item{dt}{data table with daily prices}

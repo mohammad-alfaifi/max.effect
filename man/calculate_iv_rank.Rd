@@ -4,7 +4,7 @@
 \alias{calculate_iv_rank}
 \title{calculate IV and classify firms accordingly}
 \usage{
-calculate_iv_rank(dt, portfolio_only = F)
+calculate_iv_rank(dt, portfolio_only = F, num_cuts, double_sorted = F)
 }
 \arguments{
 \item{dt}{data table with daily prices,market value and book to market values}

@@ -4,7 +4,7 @@
 \alias{calculate_monthly_illiq_rank}
 \title{calculate illiquidty}
 \usage{
-calculate_monthly_illiq_rank(dt)
+calculate_monthly_illiq_rank(dt, num_cuts, double_sorted = F)
 }
 \arguments{
 \item{dt}{data table with daily prices}

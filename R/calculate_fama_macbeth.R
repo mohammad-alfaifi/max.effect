@@ -116,22 +116,18 @@ calculate_bivariate_avg_for_all_vars<- function(dt,iv=FALSE){
   #its average and p-value to ease the grouping into one data frame
   for (i in 1:10){
 
+
     slope <- dt[,.(betas=lm(returns~firms_max + lag_mv + lag_bm +
                               roc + rev + lag_prices + coskew + iskew +
                               illiq_ratio + IV)$coefficients[i+1]),
-                by=.(yearmon)][,.(factor=tidy(coeftest(lm(betas~1),
-                                                       vcov. = NeweyWest(lm(betas~1),
-                                                                         prewhite = FALSE,adjust = T))))]
-    slope_avg <- data.frame(t(slope$factor[c(2,5)]))
+                by=.(yearmon)][,.(factor= as.numeric(roubst_se(lm(betas~1))))]
+    slope_avg <- data.frame(round(slope$factor,5))
     colnames(slope_avg)<- reg_vars_names[i+2]
-    slope_avg <- round(slope_avg,5)
 
     slope_avg[1,1]<-ifelse(slope_avg[2,1]<=.01,paste(slope_avg[1,1],"***"),
                            ifelse(slope_avg[2,1]<=.05,paste(slope_avg[1,1],"**"),
                                   ifelse(slope_avg[2,1]<=.1,paste(slope_avg[1,1],"*"),
                                          slope_avg[1,1])) )
-
-
 
     slope_avg[2,]<-paste("(",slope_avg[2,],")")
 
@@ -167,16 +163,17 @@ calculate_bivariate_avg <- function(dt,factors_names,names_displayed){
   factor_1 <- as.name(factors_names[1])
   factor_2 <- as.name(factors_names[2])
 
+
   for (i in 1:2){
 
      slope <- dt[,.(betas=lm(returns~eval(factor_1)+
                                eval(factor_2))$coefficients[i+1]),
-                  by=.(yearmon)][,.(factor=tidy(coeftest(lm(betas~1),
-                                                vcov. = NeweyWest(lm(betas~1),
-                                                                   prewhite = FALSE,adjust = T))))]
-     slope_avg <- data.frame(t(slope$factor[c(2,5)]))
+                  by=.(yearmon)][,.(factor=as.numeric(roubst_se(lm(betas~1))))]
+
+     slope_avg <- data.frame(round(slope$factor,5))
+
      colnames(slope_avg)<- names_displayed[i]
-     slope_avg <- round(slope_avg,5)
+
 
      slope_avg[1,1]<-ifelse(slope_avg[2,1]<=.01,paste(slope_avg[1,1],"***"),
                        ifelse(slope_avg[2,1]<=.05,paste(slope_avg[1,1],"**"),
@@ -187,7 +184,7 @@ calculate_bivariate_avg <- function(dt,factors_names,names_displayed){
      if(i==1){
        slope_avgs <- data.frame(slope_avg)
      }else{
-       slope_avgs <- cbind(slope_avg,slope_avgs)
+       slope_avgs <- cbind(slope_avgs,slope_avg)
      }
 
   }
@@ -218,11 +215,8 @@ calculate_univariate_avg <- function(dt,factor_name,name_displayed){
   factor_name <- as.name(factor_name)
 
   slope <- dt[,.(betas=lm(returns~eval(factor_name))$coefficients[2]),
-              by=.(yearmon)][,.(factor=tidy(coeftest(lm(betas~1),
-                                                     vcov. = NeweyWest(lm(betas~1),
-                                                                       prewhite = FALSE,adjust = T))))]
-  slope_avg <- data.frame(t(slope$factor[c(2,5)]))
-  slope_avg <- round(slope_avg,5)
+              by=.(yearmon)][,.(factor=as.numeric(roubst_se(lm(betas~1))))]
+  slope_avg <- data.frame(round(slope$factor,5))
   colnames(slope_avg)<- name_displayed
 
   slope_avg[1,1]<-ifelse(slope_avg[2,1]<=.01,paste(slope_avg[1,1],"***"),

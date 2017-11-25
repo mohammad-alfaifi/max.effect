@@ -4,7 +4,7 @@
 \alias{calculate_max_portfolio_alpha_and_raw_returns}
 \title{calculate alpha and raw return for portfolio}
 \usage{
-calculate_max_portfolio_alpha_and_raw_returns(max_ps, is_ew, dt)
+calculate_max_portfolio_alpha_and_raw_returns(max_ps, is_ew, dt, num_cuts)
 }
 \arguments{
 \item{max_ps}{data table with monthly return of each max rank}

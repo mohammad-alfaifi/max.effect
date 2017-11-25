@@ -4,7 +4,7 @@
 \alias{calculate_iv_factor}
 \title{calculate returns for iv portfolio}
 \usage{
-calculate_iv_factor(iv, is_equally_weighted, portfolio = F)
+calculate_iv_factor(iv, is_equally_weighted, portfolio = F, num_cuts)
 }
 \arguments{
 \item{iv}{data table with iv rank and iv value}

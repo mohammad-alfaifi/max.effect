@@ -4,7 +4,7 @@
 \alias{get_avg_max_protfolios}
 \title{calculate the average returns for a factor}
 \usage{
-get_avg_max_protfolios(data, factor_rank_name)
+get_avg_max_protfolios(data, factor_rank_name, num_cuts)
 }
 \arguments{
 \item{data}{data table with the return of a double sorted portfolio}

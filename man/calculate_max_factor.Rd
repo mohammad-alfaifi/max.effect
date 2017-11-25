@@ -4,7 +4,7 @@
 \alias{calculate_max_factor}
 \title{calculate max factor for given portfolio}
 \usage{
-calculate_max_factor(max, is_equally_weighted, portfolio = F)
+calculate_max_factor(max, is_equally_weighted, portfolio = F, num_cuts)
 }
 \arguments{
 \item{max}{data table with max rank and max value}

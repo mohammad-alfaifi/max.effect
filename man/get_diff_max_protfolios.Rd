@@ -4,13 +4,15 @@
 \alias{get_diff_max_protfolios}
 \title{calculate HMAX - LMAX returns}
 \usage{
-get_diff_max_protfolios(q_list, i, factor_rank_name)
+get_diff_max_protfolios(q_list, factor_rank_name, factor_rank, num_cuts)
 }
 \arguments{
 \item{q_list}{a list with the return of q1, q2, q3 portfolios for
 a given rank of the controlloed portfolio (e.g. Big or MED)}
 
 \item{factor_rank_name}{factor name (e.g. Size_rank)}
+
+\item{factor_rank}{factor rank (e.g. Size_rank=q1)}
 
 \item{data}{data table with the return of a double sorted portfolio}
 }

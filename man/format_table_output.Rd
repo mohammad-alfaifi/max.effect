@@ -4,7 +4,7 @@
 \alias{format_table_output}
 \title{format alphas table}
 \usage{
-format_table_output(alphas_table, is_ew = T)
+format_table_output(alphas_table, is_ew = T, num_cuts)
 }
 \arguments{
 \item{alphas_table}{data table with alphas and p-vakues}

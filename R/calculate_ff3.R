@@ -66,15 +66,15 @@ calculate_market_excess_returns <- function(dt,monthly=F, country_code=NULL, sav
   if(monthly){
     dt <- dt[order(+dates)]
     dt <- dt[,.SD[.N],by=.(yearmon,firms)]
-    dt <- dt[,.(sum_prices=sum(prices)),by= .(yearmon,RF_m)][order(+yearmon)]
-    dt <- dt[ ,mkt_prem:=((log(sum_prices)- shift(log(sum_prices), 1L, type="lag"))-RF_m)]
+    dt <- dt[,.(sum_mvs=sum(MV)),by= .(yearmon,RF_m)][order(+yearmon)]
+    dt <- dt[ ,mkt_prem:=((log(sum_mvs)- shift(log(sum_mvs), 1L, type="lag"))-RF_m)]
 
   }else{
-    dt <- dt[,.(sum_prices = sum(prices)),by= .(dates,RF)][order(+dates)]
-    dt <- dt[ ,mkt_prem:=((log(sum_prices)- shift(log(sum_prices), 1L, type="lag"))-RF)]
+    dt <- dt[,.(sum_mvs = sum(MV)),by= .(dates,RF)][order(+dates)]
+    dt <- dt[ ,mkt_prem:=((log(sum_mvs)- shift(log(sum_mvs), 1L, type="lag"))-RF)]
   }
 
-  dt <- na.omit(dt[,-"sum_prices"])
+  dt <- na.omit(dt[,-"sum_mvs"])
 
 
 
@@ -120,11 +120,11 @@ classify_firms_according_to_mv_and_bm <- function(dt,mv_breakpoint=0.5){
   #to make the classfication for firms which their information avaiable in June and December
   accounting_info <- merge(bm,mv)
 
-  accounting_info[size=="big",value:=ifelse(BM < quantile(BM,.333),"BG",
-                                            ifelse(BM < quantile(BM,.666),"BN","BV")),
+  accounting_info[size=="big",value:=ifelse(BM < quantile(BM,.3),"BG",
+                                            ifelse(BM < quantile(BM,.7),"BN","BV")),
                   by=.(yearmon)]
-  accounting_info[size=="small",value:=ifelse(BM < quantile(BM,.333),"SG",
-                                              ifelse(BM < quantile(BM,.666),"SN","SV")),
+  accounting_info[size=="small",value:=ifelse(BM < quantile(BM,.3),"SG",
+                                              ifelse(BM < quantile(BM,.7),"SN","SV")),
                   by=.(yearmon)]
 
 
@@ -157,13 +157,13 @@ calculate_six_portfolios_returns <- function(dt,monthly=F){
   dt <- classify_firms_according_to_mv_and_bm(dt)
   if(monthly){
     dt_monthly <- dt[,.SD[.N],by=.(yearmon,firms)]
-    p6 <- dt_monthly[,.(sum_prices=sum(prices)),by=.(value,yearmon)]
+    p6 <- dt_monthly[,.(sum_mvs=sum(MV)),by=.(value,yearmon)]
   }else{
-    p6 <- dt[,.(sum_prices=sum(prices)),by=.(value,dates)]
+    p6 <- dt[,.(sum_mvs=sum(MV)),by=.(value,dates)]
   }
-  p6 <- p6[,portfolio_return:= log(sum_prices)-shift(log(sum_prices),1L, type="lag"),
+  p6 <- p6[,portfolio_return:= log(sum_mvs)-shift(log(sum_mvs),1L, type="lag"),
            by=.(value)]
-  p6 <- p6[,-("sum_prices"),with=F]
+  p6 <- p6[,-("sum_mvs"),with=F]
   p6 <- spread(p6,value,portfolio_return)
 
   return(p6)
@@ -173,45 +173,3 @@ calculate_six_portfolios_returns <- function(dt,monthly=F){
 
 
 
-#' merge equally weighted daily returns with the three factors
-#' @description It takes a long-formated data table with prices, market value, book balue and volumn
-#'  and calculates equally-weighted daily return and daily three factors and merge them.
-#'
-#'@param dt  data table with prices, mar
-#'@param country_code the country in which the data belongs to.
-#'@return \code{dt} with volum,prices,market value and book value
-#' @import data.table
-
-#'@export
-#'
-
-get_ew_daily_returns_and_ff3 <- function(dt){
-
-  ff3 <- calculate_ff3(dt)
-  ew_daily_rt <- calculate_daily_returns(dt)
-  ew_daily_rt$daily_returns <- ew_daily_rt$daily_returns - ew_daily_rt$RF
-  returns_with_ff3 <- merge(ff3,ew_daily_rt,by=("dates"))
-
-  return(returns_with_ff3)
-}
-
-
-#' merge value weighted daily returns with the three factors
-#' @description It takes a long-formated data table with prices, market value, book balue and volumn
-#'  and calculates value-weighted daily return and daily three factors and merge them.
-#'
-#'@param dt  data table with prices, mar
-#'@param country_code the country in which the data belongs to.
-#'@return \code{dt} with volum,prices,market value and book value
-#' @import data.table
-#'@export
-#'
-
-get_vw_daily_returns_and_ff3 <- function(dt){
-
-  ff3 <- calculate_daily_ff3(dt)
-  vw_daily_rt <- calculate_daily_weighted_returns(dt)
-  returns_with_ff3 <- merge(ff3,vw_daily_rt)
-
-  return(returns_with_ff3)
-}
