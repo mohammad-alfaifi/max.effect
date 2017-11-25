@@ -4,7 +4,7 @@
 \alias{round_and_format}
 \title{format the raw or alpha return results}
 \usage{
-round_and_format(avg_rt, alphas = T)
+round_and_format(avg_rt, alphas = T, num_cuts)
 }
 \arguments{
 \item{avg_rt}{data table with alpha or raw return}

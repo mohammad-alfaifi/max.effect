@@ -4,7 +4,7 @@
 \alias{get_max_ew_and_vw_portfolio_returns}
 \title{group max alpha and raw returns for EW and VW portfolios}
 \usage{
-get_max_ew_and_vw_portfolio_returns(dt, n = 1)
+get_max_ew_and_vw_portfolio_returns(dt, n = 1, num_cuts)
 }
 \arguments{
 \item{dt}{data table with daily  prices

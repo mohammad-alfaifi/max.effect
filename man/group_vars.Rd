@@ -4,7 +4,7 @@
 \alias{group_vars}
 \title{group the ranking of various factors}
 \usage{
-group_vars(dt, country_code = FALSE, save = FALSE)
+group_vars(dt, n = 1, num_cuts = 3, country_code = FALSE, save = FALSE)
 }
 \arguments{
 \item{dt}{data table with prices,mv,bm and volume}

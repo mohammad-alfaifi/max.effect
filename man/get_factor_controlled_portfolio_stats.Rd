@@ -4,8 +4,8 @@
 \alias{get_factor_controlled_portfolio_stats}
 \title{get the alpha and p-values for double sorted portfolios}
 \usage{
-get_factor_controlled_portfolio_stats(dt, factor_rank_name, portfolio = F,
-  is_e_weighted = T)
+get_factor_controlled_portfolio_stats(dt, factor_rank_name, is_e_weighted = T,
+  num_cuts)
 }
 \arguments{
 \item{dt}{data table with double sorted stocks}
