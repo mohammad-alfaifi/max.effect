@@ -39,13 +39,12 @@ clean_wide_raw_stocks_infomation=function(raw_stocks_info_file,rf_daily_file,
   dt <- select(dt,-starts_with("X.ERROR"))
   #change to long format to easily work with data
   dt$dates <- as.Date(dt$dates,format="%d/%m/%Y")
-  dt<-dt[dt$dates < "2007-01-01" & dt$dates > "2000-01-01"  ,]
+ # dt<-dt[dt$dates < "2005-01-01" & dt$dates > "2000-01-01"  ,]
   #dt<-dt[dt$dates > "2000-01-01" ,]
 
-  print("new2")
+  print("new4")
 
   #to remove the 's' entry in the venz data
-  # tbl <- tbl[tbl$dates > "1990-01-05",]
   dt[,2:ncol(dt)]<-lapply(dt[,2:ncol(dt)],as.numeric)
 
   dt <- gather(dt,firms,values,-dates)
@@ -187,6 +186,7 @@ clean_stocks_infomation=function(dt,rf_daily_file,
   rf_d$year<-year(rf_d$dates)
   trading_days_count <- rf_d[,.(days_in_year=.N),by=.(year)][,round(mean(days_in_year),0)]
   rf_d <- rf_d[,.(dates,RF=(RF/100)/trading_days_count)]
+  rf_d<-na.omit(rf_d)
   #rf_d$RF <- rf_d$RF/100
 
   stocks_info_cleaned <- merge(stocks_info_cleaned,rf_d,by="dates")
@@ -199,6 +199,8 @@ clean_stocks_infomation=function(dt,rf_daily_file,
   rf_m<-rf_m[,-'dates',with=F]
   rf_m$RF_m<-(rf_m$RF_m/100)/12
   rf_m <- rf_m[,.(yearmon,RF_m)]
+  rf_m<-na.omit(rf_m)
+
 
   #adding monthly risk free rate column
   stocks_info_cleaned <- merge(stocks_info_cleaned,rf_m,by="yearmon")

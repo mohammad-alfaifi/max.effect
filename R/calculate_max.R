@@ -18,7 +18,7 @@
 
 calculate_max_rank <- function(dt,n=1,num_cuts=3){
 
-print("hi6")
+print("hi7")
 
   dt <- calculate_daily_returns(dt)[order(-yearmon,+daily_returns)]
 
@@ -230,8 +230,8 @@ calculate_max_portfolio_alpha_and_raw_returns<-function(max_ps,is_ew,dt,num_cuts
   #create High-Low Max
   max_ps[[highest_portfolio]] <- max_ps[[highest_rank]] - max_ps$q1
 
-  #ff3_m<-calculate_ff3(dt,monthly = T)
-  ff3_m<-calculate_US_ff3()
+  ff3_m<-calculate_ff3(dt,monthly = T)
+  #ff3_m<-calculate_US_ff3()
 
   max_ps<-merge(max_ps,ff3_m,by="yearmon")
 
