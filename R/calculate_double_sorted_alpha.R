@@ -71,11 +71,19 @@ calculate_portfolios_count_for_double_sorted_alpha<- function(dt,factor_rank_nam
   q<-rep("q",num_cuts)
   num<-1:num_cuts
   factor_ranking <- paste(q,num,sep="")
-  max_ranking <- paste(q,num,sep="")
+  max_or_iv_ranking <- paste(q,num,sep="")
 
 
   factor_rank_name = as.name(factor_rank_name)
 
+  if(is_max_p){
+    var_name<-"max"
+    var_rank<-as.name("max_rank")
+  }else{
+    var_name<-"IV"
+    var_rank<-as.name("IV_rank")
+
+  }
 
   data<-data.frame()
   counting_list<-list()
@@ -84,18 +92,18 @@ calculate_portfolios_count_for_double_sorted_alpha<- function(dt,factor_rank_nam
   for (i in 1:num_cuts){
 
     for(j in 1:num_cuts){
-      portfolio_returns=paste("q",j,"max",factor_rank_name,factor_ranking[i],sep = "_")
+      portfolio_returns=paste("q",j,var_name,factor_rank_name,factor_ranking[i],sep = "_")
       portfolio_returns_name<-as.name(portfolio_returns)
 
 
       if(is_ew){
         q <- dt[eval(factor_rank_name)== eval(factor_ranking[i]) &
-                  max_rank == eval(max_ranking[j]),.(portfolio_returns=mean(returns)),
+                  eval(var_rank) == eval(max_or_iv_ranking[j]),.(portfolio_returns=mean(returns)),
                 by=.(yearmon,smb,hml,mkt_prem)]
         colnames(q)[which(colnames(q)=="portfolio_returns")]<-eval(portfolio_returns)
       }else{
         q <- dt[eval(factor_rank_name)== eval(factor_ranking[i]) &
-                  max_rank == eval(max_ranking[j]),.(sum_mvs=sum(MV)),
+                  eval(var_rank) == eval(max_or_iv_ranking[j]),.(sum_mvs=sum(MV)),
                 by=.(yearmon,smb,hml,mkt_prem)][,eval(portfolio_returns):=log(sum_mvs)-
                                                   shift(log(sum_mvs),1L,type="lag")]
         q<-q[,-"sum_mvs"]
@@ -120,6 +128,120 @@ calculate_portfolios_count_for_double_sorted_alpha<- function(dt,factor_rank_nam
 
 
   return(data)
+}
+
+
+
+#' calculate double sorted alphas
+#' @description It takes a data table with return and ten other factors.
+#' It calls get_factor_controlled_portfolio_stats function to calculates
+#'  the alpha for a certain factor (e.g. size) of equally and double sorted
+#' portfolios
+#'@param dt  data table with return and ten other factors
+#'@return \code{dt} data table with double sorted alpha statstics for both
+#'equally and value weighted portfolios
+#' @import data.table
+#'@export
+#'
+
+
+
+
+calculate_double_sorted_alpha <- function(dt,num_cuts,n=1,max_type="max"){
+
+  # a file that has monthly return with ff-3 model
+  temp_file <- "data/temp_dt_monthly.rds"
+  #remove to avoid any possible duplication
+
+  if (file.exists(temp_file)) file.remove(temp_file)
+
+  if(max_type=="max"|max_type=="min"){
+    is_max_p<-T
+
+  }else{
+    is_max_p<-F
+
+  }
+
+  #######################################################
+  ######## #########calculate controlling variables ######################
+  #######################################################
+
+  size <- calculate_monthly_size_rank(dt,num_cuts,double_sorted  = T)
+  bm <- calculate_monthly_bm_rank(dt,num_cuts,double_sorted = T)
+  cl <- calculate_monthly_cl_prices_rank(dt,num_cuts)
+  rev <- calculate_monthly_reversal(dt,num_cuts,double_sorted=T)
+  mom <- calculate_momentum_rank(dt,portfolio_only = T,num_cuts)
+  illiq <- calculate_monthly_illiq_rank(dt,num_cuts,double_sorted=T)
+  skewness <- calculate_skewness_rank(dt,num_cuts,double_sorted = T)
+  coskew<-skewness[,.(yearmon,firms,coskew,SSKEW_rank)]
+  iskew<-skewness[,.(yearmon,firms,iskew,ISKEW_rank)]
+  iv <- calculate_iv_rank(dt,num_cuts,rank_only=T)
+  if(max_type=="max" | max_type=="min"){
+    max<-calculate_max_rank(dt,n=1,num_cuts,rank_only=T,max_type = max_type)
+
+  }else{
+    max<-calculate_max_rank(dt,n=1,num_cuts,rank_only=T,max_type = max_type)
+
+  }
+
+
+  #######################################################
+  #######################################################
+
+
+  size_e<- construct_double_sorted_portfolios(dt=dt,factor_dt=size,num_cuts,factor_rank_name="Size_rank",is_e_weighted = T,max_type)
+  bm_e<- construct_double_sorted_portfolios(dt=dt,factor_dt=bm,num_cuts,factor_rank_name="BM_rank",is_e_weighted = T,max_type)
+  cl_e<- construct_double_sorted_portfolios(dt=dt,factor_dt=cl,num_cuts,factor_rank_name="CP_rank",is_e_weighted = T,max_type)
+  rev_e<- construct_double_sorted_portfolios(dt=dt,factor_dt=rev,num_cuts,factor_rank_name="Rev_rank",is_e_weighted = T,max_type)
+  mom_e<- construct_double_sorted_portfolios(dt=dt,factor_dt=mom,num_cuts,factor_rank_name="MOM_rank",is_e_weighted = T,max_type)
+  illiq_e<- construct_double_sorted_portfolios(dt=dt,factor_dt=illiq,num_cuts,factor_rank_name="ILLIQ_rank",is_e_weighted = T,max_type)
+  coskew_e<- construct_double_sorted_portfolios(dt=dt,factor_dt=coskew,num_cuts,factor_rank_name="SSKEW_rank",is_e_weighted = T,max_type)
+  iskew_e<- construct_double_sorted_portfolios(dt=dt,factor_dt=iskew,num_cuts,factor_rank_name="ISKEW_rank",is_e_weighted = T,max_type)
+  if(max_type=="max" | max_type=="min"){
+    iv_or_max_e<- construct_double_sorted_portfolios(dt=dt,factor_dt=iv,num_cuts,factor_rank_name="IV_rank",is_e_weighted = T,max_type)
+
+  }else{
+    iv_or_max_e<- construct_double_sorted_portfolios(dt=dt,factor_dt=max,num_cuts,factor_rank_name="max_rank",is_e_weighted = T,max_type)
+
+  }
+
+
+  e_p<-rbind(size_e,bm_e,cl_e,rev_e,mom_e,coskew_e,iskew_e,illiq_e,iv_or_max_e)
+
+   e_p <- format_table_output(e_p,is_ew = T,num_cuts = num_cuts,is_max_p)
+
+
+   #######################################################
+   #######calculate value wieghted portfolio #############
+   #######################################################
+
+   size_v<- construct_double_sorted_portfolios(dt=dt,factor_dt=size,num_cuts,factor_rank_name="Size_rank",is_e_weighted = F,max_type)
+   bm_v<- construct_double_sorted_portfolios(dt=dt,factor_dt=bm,num_cuts,factor_rank_name="BM_rank",is_e_weighted = F,max_type)
+   cl_v<- construct_double_sorted_portfolios(dt=dt,factor_dt=cl,num_cuts,factor_rank_name="CP_rank",is_e_weighted = F,max_type)
+   rev_v<- construct_double_sorted_portfolios(dt=dt,factor_dt=rev,num_cuts,factor_rank_name="Rev_rank",is_e_weighted = F,max_type)
+   mom_v<- construct_double_sorted_portfolios(dt=dt,factor_dt=mom,num_cuts,factor_rank_name="MOM_rank",is_e_weighted = F,max_type)
+   illiq_v<- construct_double_sorted_portfolios(dt=dt,factor_dt=illiq,num_cuts,factor_rank_name="ILLIQ_rank",is_e_weighted = F,max_type)
+   coskew_v<- construct_double_sorted_portfolios(dt=dt,factor_dt=coskew,num_cuts,factor_rank_name="SSKEW_rank",is_e_weighted = F,max_type)
+   iskew_v<- construct_double_sorted_portfolios(dt=dt,factor_dt=iskew,num_cuts,factor_rank_name="ISKEW_rank",is_e_weighted = F,max_type)
+   if(max_type=="max" | max_type=="min"){
+     iv_or_max_v<- construct_double_sorted_portfolios(dt=dt,factor_dt=iv,num_cuts,factor_rank_name="IV_rank",is_e_weighted = F,max_type)
+
+   }else{
+     iv_or_max_v<- construct_double_sorted_portfolios(dt=dt,factor_dt=max,num_cuts,factor_rank_name="max_rank",is_e_weighted = F,max_type)
+
+   }
+
+
+
+
+  v_p<-rbind(size_v,bm_v,cl_v,rev_v,mom_v,coskew_v,iskew_v,illiq_v,iv_or_max_v)
+
+  v_p <- format_table_output(v_p,num_cuts=num_cuts,is_ew = F,is_max_p)
+
+  alphas_double_sorted <-as.data.table(cbind(e_p,v_p))
+
+  return(alphas_double_sorted)
 }
 
 
@@ -159,9 +281,14 @@ prepare_double_sorted_portfolios <-function(dt){
 #'@export
 #'
 
-construct_double_sorted_portfolios <-function(dt,factor_dt,num_cuts,factor_rank_name,is_e_weighted=T){
+construct_double_sorted_portfolios <-function(dt,factor_dt,num_cuts,factor_rank_name,is_e_weighted=T,max_type="max"){
 
-  # to be used in calculating the max of each factor rank
+  if(max_type=="max" | max_type=="min"){
+    is_max_p = T
+  }else{
+    is_max_p = F
+  }
+  # to be used in calculating the max or iv of each factor rank
   q<-rep("q",num_cuts)
   num<-1:num_cuts
   factor_ranking <- paste(q,num,sep="")
@@ -184,111 +311,38 @@ construct_double_sorted_portfolios <-function(dt,factor_dt,num_cuts,factor_rank_
 
     single_sort<-factor_dt[eval(as.name(factor_rank_name))==factor_ranking[i]]
     #to double sort
-    max<-calculate_max_rank(single_sort,n=1,num_cuts)
+    if(max_type=="max"){
+      max_or_iv<-calculate_max_rank(single_sort,n=1,num_cuts=num_cuts,max_type=max_type)
+
+    }else if(max_type=="min"){
+      max_or_iv<-calculate_max_rank(single_sort,n=1,num_cuts=num_cuts,max_type=max_type)
+    }else{
+      max_or_iv<-calculate_iv_rank(single_sort,num_cuts,double_sorted = T)
+    }
 
     if (i == 1){
-      max_p<-as.data.table(max)
+      double_sorted_p<-as.data.table(max_or_iv)
     }else{
-      max_p<-rbind(max_p,max)
+      double_sorted_p<-rbind(double_sorted_p,max_or_iv)
     }
   }
 
-  #note max_p has the values of max and factor rank updates as lag by adding a month to yearmon
-  max_p<-max_p[,-c("BM","Vol","dates","RF","RF_m","daily_returns","years","prices","MV"),with=F]
+  #note double sorted has the values of max or iv and factor rank updates as lag by adding a month to yearmon
+  if(is_max_p){
+    double_sorted_p<-double_sorted_p[,-c("BM","Vol","dates","RF","RF_m","daily_returns","years","prices","MV"),with=F]
+
+  }else{
+    double_sorted_p<-double_sorted_p[,-c("BM","Vol","dates","RF","RF_m","years","prices","MV"),with=F]
+
+  }
 
   # merge monthly values with double sorted portfolio for regreesion
-  factor_dt<-merge(max_p,dt_monthly,by=c("yearmon","firms"))
+  factor_dt<-merge(double_sorted_p,dt_monthly,by=c("yearmon","firms"))
 
-  factor_dt <- get_factor_controlled_portfolio_stats(dt=factor_dt,factor_rank_name = factor_rank_name,num_cuts=num_cuts,is_e_weighted)
+  factor_dt <- get_factor_controlled_portfolio_stats(dt=factor_dt,factor_rank_name = factor_rank_name,num_cuts=num_cuts,is_e_weighted,is_max_p)
 
   return(factor_dt)
 
-}
-
-
-#' calculate double sorted alphas
-#' @description It takes a data table with return and ten other factors.
-#' It calls get_factor_controlled_portfolio_stats function to calculates
-#'  the alpha for a certain factor (e.g. size) of equally and double sorted
-#' portfolios
-#'@param dt  data table with return and ten other factors
-#'@return \code{dt} data table with double sorted alpha statstics for both
-#'equally and value weighted portfolios
-#' @import data.table
-#'@export
-#'
-
-
-
-
-calculate_double_sorted_alpha <- function(dt,num_cuts,n=1){
-
-  # a file that has monthly return with ff-3 model
-  temp_file <- "data/temp_dt_monthly.rds"
-  #remove to avoid any possible duplication
-
-  if (file.exists(temp_file)) file.remove(temp_file)
-
-  #######################################################
-  ######## #########calculate controlling variables ######################
-  #######################################################
-
-  size <- calculate_monthly_size_rank(dt,num_cuts,double_sorted = T)
-  bm <- calculate_monthly_bm_rank(dt,num_cuts,double_sorted = T)
-  cl <- calculate_monthly_cl_prices_rank(dt,num_cuts)
-  rev <- calculate_monthly_reversal(dt,num_cuts,double_sorted=T)
-  mom <- calculate_momentum_rank(dt,portfolio_only = T,num_cuts)
-  illiq <- calculate_monthly_illiq_rank(dt,num_cuts,double_sorted=T)
-  skewness <- calculate_skewness_rank(dt,num_cuts,double_sorted = T)
-  coskew<-skewness[,.(yearmon,firms,coskew,SSKEW_rank)]
-  iskew<-skewness[,.(yearmon,firms,iskew,ISKEW_rank)]
-  iv <- calculate_iv_rank(dt,portfolio_only = T,num_cuts,double_sorted=T)
-
-
-  #######################################################
-  #######calculate equally wieghted portfolio ###########
-  #######################################################
-
-
-  size_e<- construct_double_sorted_portfolios(dt=dt,factor_dt=size,num_cuts,factor_rank_name="Size_rank",is_e_weighted = T)
-  bm_e<- construct_double_sorted_portfolios(dt=dt,factor_dt=bm,num_cuts,factor_rank_name="BM_rank",is_e_weighted = T)
-  cl_e<- construct_double_sorted_portfolios(dt=dt,factor_dt=cl,num_cuts,factor_rank_name="CP_rank",is_e_weighted = T)
-  rev_e<- construct_double_sorted_portfolios(dt=dt,factor_dt=rev,num_cuts,factor_rank_name="Rev_rank",is_e_weighted = T)
-  mom_e<- construct_double_sorted_portfolios(dt=dt,factor_dt=mom,num_cuts,factor_rank_name="MOM_rank",is_e_weighted = T)
-  illiq_e<- construct_double_sorted_portfolios(dt=dt,factor_dt=illiq,num_cuts,factor_rank_name="ILLIQ_rank",is_e_weighted = T)
-  coskew_e<- construct_double_sorted_portfolios(dt=dt,factor_dt=coskew,num_cuts,factor_rank_name="SSKEW_rank",is_e_weighted = T)
-  iskew_e<- construct_double_sorted_portfolios(dt=dt,factor_dt=iskew,num_cuts,factor_rank_name="ISKEW_rank",is_e_weighted = T)
-  iv_e<- construct_double_sorted_portfolios(dt=dt,factor_dt=iv,num_cuts,factor_rank_name="IV_rank",is_e_weighted = T)
-
-
-  e_p<-rbind(size_e,bm_e,cl_e,rev_e,mom_e,coskew_e,iskew_e,illiq_e,iv_e)
-
-   e_p <- format_table_output(e_p,is_ew = T,num_cuts = num_cuts)
-
-
-   #######################################################
-   #######calculate value wieghted portfolio #############
-   #######################################################
-
-   size_v<- construct_double_sorted_portfolios(dt=dt,factor_dt=size,num_cuts,factor_rank_name="Size_rank",is_e_weighted = F)
-   bm_v<- construct_double_sorted_portfolios(dt=dt,factor_dt=bm,num_cuts,factor_rank_name="BM_rank",is_e_weighted = F)
-   cl_v<- construct_double_sorted_portfolios(dt=dt,factor_dt=cl,num_cuts,factor_rank_name="CP_rank",is_e_weighted = F)
-   rev_v<- construct_double_sorted_portfolios(dt=dt,factor_dt=rev,num_cuts,factor_rank_name="Rev_rank",is_e_weighted = F)
-   mom_v<- construct_double_sorted_portfolios(dt=dt,factor_dt=mom,num_cuts,factor_rank_name="MOM_rank",is_e_weighted = F)
-   illiq_v<- construct_double_sorted_portfolios(dt=dt,factor_dt=illiq,num_cuts,factor_rank_name="ILLIQ_rank",is_e_weighted = F)
-   coskew_v<- construct_double_sorted_portfolios(dt=dt,factor_dt=coskew,num_cuts,factor_rank_name="SSKEW_rank",is_e_weighted = F)
-   iskew_v<- construct_double_sorted_portfolios(dt=dt,factor_dt=iskew,num_cuts,factor_rank_name="ISKEW_rank",is_e_weighted = F)
-   iv_v<- construct_double_sorted_portfolios(dt=dt,factor_dt=iv,num_cuts,factor_rank_name="IV_rank",is_e_weighted = F)
-
-
-
-  v_p<-rbind(size_v,bm_v,cl_v,rev_v,mom_v,coskew_v,iskew_v,illiq_v,iv_v)
-
-  v_p <- format_table_output(v_p,num_cuts=num_cuts,is_ew = F)
-
-  alphas_double_sorted <-as.data.table(cbind(e_p,v_p))
-
-  return(alphas_double_sorted)
 }
 
 
@@ -297,7 +351,7 @@ calculate_double_sorted_alpha <- function(dt,num_cuts,n=1){
 #' from the received data table, then it calculates the portfolio's return and
 #' regresses it against fama-french three factors
 #'@param dt  data table with double sorted stocks
-#'@param factor_rank_name  the name of the factor that we want to double sort with max
+#'@param factor_rank_name  the name of the factor that we want to double sort with max or iv
 #'@param factor_ranking  the ranks of the factor (levels)
 #'@param is_e_weighted  logical, if False calculates the return of value weighted portfolios
 
@@ -313,7 +367,7 @@ calculate_double_sorted_alpha <- function(dt,num_cuts,n=1){
 #'
 
 
-get_factor_controlled_portfolio_stats <- function(dt,factor_rank_name,is_e_weighted=T,num_cuts){
+get_factor_controlled_portfolio_stats <- function(dt,factor_rank_name,is_e_weighted=T,num_cuts,is_max_p=T){
 
 
   print(factor_rank_name)
@@ -321,27 +375,35 @@ get_factor_controlled_portfolio_stats <- function(dt,factor_rank_name,is_e_weigh
   q<-rep("q",num_cuts)
   num<-1:num_cuts
   factor_ranking <- paste(q,num,sep="")
-  max_ranking <- paste(q,num,sep="")
+  max_or_iv_ranking <- paste(q,num,sep="")
+
+  if(is_max_p){
+    var_name<-"max"
+    var_rank<-as.name("max_rank")
+  }else{
+    var_name<-"IV"
+    var_rank<-as.name("IV_rank")
+  }
 
   factor_rank_name = as.name(factor_rank_name)
   q_list_initiated<-F
 
   alphas <- data.table()
   q_list <- list()
-  diff_max <-list()
+  diff_max_or_iv <-list()
 
 
   for(i in 1:num_cuts){
 
     for(j in 1:num_cuts){
 
-      portfolio_returns=paste(paste("q",j,sep=""),"max",factor_rank_name,factor_ranking[i],sep = "_")
+      portfolio_returns=paste(paste("q",j,sep=""),var_name,factor_rank_name,factor_ranking[i],sep = "_")
       portfolio_returns_name<-as.name(portfolio_returns)
 
        if(is_e_weighted){
 
         q <- dt[eval(factor_rank_name)== eval(factor_ranking[i]) &
-                  max_rank == eval(max_ranking[j]),.(portfolio_returns=mean(returns)),
+                  eval(var_rank) == eval(max_or_iv_ranking[j]),.(portfolio_returns=mean(returns)),
                 by=.(yearmon,smb,hml,mkt_prem,RF_m)]
         q$portfolio_returns <- q$portfolio_returns - q$RF_m
         colnames(q)[which(colnames(q)=="portfolio_returns")]<-eval(portfolio_returns)
@@ -350,7 +412,7 @@ get_factor_controlled_portfolio_stats <- function(dt,factor_rank_name,is_e_weigh
       }else{
 
         q <- dt[eval(factor_rank_name)== eval(factor_ranking[i]) &
-                  max_rank == eval(max_ranking[j]),.(sum_mvs=sum(MV)),
+                  eval(var_rank) == eval(max_or_iv_ranking[j]),.(sum_mvs=sum(MV)),
                 by=.(yearmon,smb,hml,mkt_prem,RF_m)][,eval(portfolio_returns):=(log(sum_mvs)-
                                                   shift(log(sum_mvs),1L,type="lag"))-RF_m]
         q<-q[,-"sum_mvs"]
@@ -367,7 +429,7 @@ get_factor_controlled_portfolio_stats <- function(dt,factor_rank_name,is_e_weigh
 
 
       if(j==num_cuts){
-        q_list<-get_diff_max_protfolios(q_list,factor_rank_name,factor_ranking[i],num_cuts)
+        q_list<-get_diff_max_or_iv_protfolios(q_list,factor_rank_name,factor_ranking[i],num_cuts,is_max_p)
       }
 
       }
@@ -380,7 +442,7 @@ get_factor_controlled_portfolio_stats <- function(dt,factor_rank_name,is_e_weigh
 
   data<-merge(ff3_monthly,data,by="yearmon")
 
-  data<-get_avg_max_protfolios(data,factor_rank_name,num_cuts)
+  data<-get_avg_max_or_iv_protfolios(data,factor_rank_name,num_cuts,is_max_p)
 
   data<-calculate_alphas(data,num_cuts)
 
@@ -405,30 +467,35 @@ get_factor_controlled_portfolio_stats <- function(dt,factor_rank_name,is_e_weigh
 #' @export
 
 
-get_diff_max_protfolios<-function(q_list,factor_rank_name,factor_rank,num_cuts){
+get_diff_max_or_iv_protfolios<-function(q_list,factor_rank_name,factor_rank,num_cuts,is_max_p=T){
 
 
-  low<-paste("q1","max",factor_rank_name,factor_rank,sep = "_")
-  high<-paste(paste("q",num_cuts,sep=""),"max",factor_rank_name,factor_rank,sep = "_")
+  if(is_max_p){
+    var_name<-"max"
+  }else{
+    var_name<-"IV"
+  }
+  low<-paste("q1",var_name,factor_rank_name,factor_rank,sep = "_")
+  high<-paste(paste("q",num_cuts,sep=""),var_name,factor_rank_name,factor_rank,sep = "_")
 
   #to name the difference portfolio at the end
-  diff_p<-paste(paste("q",num_cuts,sep=""),"q1","max",
+  diff_p<-paste(paste("q",num_cuts,sep=""),"q1",var_name,
                 factor_rank_name,factor_rank,sep = "_")
 
-  #reterive high and low max portfolios
-  high_max<-q_list[[high]]
-  low_max<-q_list[[low]]
+  #reterive high and low max or iv portfolios
+  high_max_or_iv<-q_list[[high]]
+  low_max_or_iv<-q_list[[low]]
 
 
-  # calculate the different between highmax and low max
-  diff_max <- merge(low_max,high_max,by="yearmon")
-  diff_max$diff<-diff_max[[high]]- diff_max[[low]]
+  # calculate the different between highmax(highiv) and low max(lowiv)
+  diff_max_or_iv <- merge(low_max_or_iv,high_max_or_iv,by="yearmon")
+  diff_max_or_iv$diff<-diff_max_or_iv[[high]]- diff_max_or_iv[[low]]
 
   #format result
-  diff_max<-diff_max[,.(yearmon,diff)]
-  colnames(diff_max)[2]<-c(diff_p)
+  diff_max_or_iv<-diff_max_or_iv[,.(yearmon,diff)]
+  colnames(diff_max_or_iv)[2]<-c(diff_p)
   #add to the list of portfolios
-  q_list[[diff_p]]<-diff_max
+  q_list[[diff_p]]<-diff_max_or_iv
 
   return(q_list)
 }
@@ -436,7 +503,7 @@ get_diff_max_protfolios<-function(q_list,factor_rank_name,factor_rank,num_cuts){
 #' calculate the average returns for a factor
 #' @description It calculates the average returns for a factor controlling on MAX (e.g. average return
 #' for three portfolios of BIG,MED and SMA size for LMAX). In order to get the average return, it
-#' controlls for max but the factor values varis as illiustrated in the previous example.
+#' controlls for max or iv but the factor values varis as illiustrated in the previous example.
 #'@param data  data table with the return of a double sorted portfolio
 #'@param factor_rank_name  factor name (e.g. Size_rank)
 #'@param data  data table with the return of a double sorted portfolio
@@ -448,42 +515,49 @@ get_diff_max_protfolios<-function(q_list,factor_rank_name,factor_rank,num_cuts){
 #' @export
 
 
-get_avg_max_protfolios<-function(data,factor_rank_name,num_cuts){
+get_avg_max_or_iv_protfolios<-function(data,factor_rank_name,num_cuts,is_max_p=T){
 
-  # to iterrate  max portfolios
+  # to iterrate  max or iv portfolios
   k <- 1:num_cuts
   # iterate factor portfolios
   j <- rep(k,num_cuts)
   q<-rep("q",num_cuts)
   num<-1:num_cuts
   factor_ranking <- paste(q,num,sep="")
-  max_ranking <- paste(q,num,sep="")
+  max_or_iv_ranking <- paste(q,num,sep="")
+
+  if(is_max_p){
+    var_name<-"max"
+  }else{
+    var_name<-"IV"
+  }
 
   data<-as.data.frame(data)
   for (i in 1:num_cuts){
 
-    #to get name of max portfolio (e,g q1)
+    #to get name of max or iv portfolio (e,g q1)
     #with different factor rank(e.g q1,q2,q3)
 
-    portfolio_name<-paste(paste("q",k[i],sep=""),"max",factor_rank_name,
+    portfolio_name<-paste(paste("q",k[i],sep=""),var_name,factor_rank_name,
                                   factor_ranking[1:num_cuts],sep = "_")
     portfolio_name<-c(portfolio_name,'yearmon')
 
     #obtain portfolio with the names above to calculate their mean
-    max_q<-as.data.table(data[portfolio_name])
-    max_q<-max_q[, .(Mean = rowMeans(.SD,na.rm = T)), by = yearmon]
+    max_or_iv_q<-as.data.table(data[portfolio_name])
+    max_or_iv_q<-max_or_iv_q[, .(Mean = rowMeans(.SD,na.rm = T)), by = yearmon]
     #format name to be added to received data frame
-    colnames(max_q)[2]<-paste(paste("q",k[i],sep=""),"max",factor_rank_name,"avg",sep="_")
-    data<-merge(data,max_q,by="yearmon")
+    colnames(max_or_iv_q)[2]<-paste(paste("q",k[i],sep=""),var_name,factor_rank_name,"avg",sep="_")
+    data<-merge(data,max_or_iv_q,by="yearmon")
 
   }
 
-  low<-paste("q1","max",factor_rank_name,"avg",sep="_")
-  high<-paste(paste("q",num_cuts,sep=""),"max",factor_rank_name,"avg",sep="_")
+  low<-paste("q1",var_name,factor_rank_name,"avg",sep="_")
+  high<-paste(paste("q",num_cuts,sep=""),var_name,factor_rank_name,"avg",sep="_")
 
 
   data$avg_diff_factor <- data[[high]]-data[[low]]
-  colnames(data)[which(colnames(data)=="avg_diff_factor")]<-paste(paste("q",num_cuts,sep=""),"q1","max",factor_rank_name,"avg","diff",
+  colnames(data)[which(colnames(data)=="avg_diff_factor")]<-paste(paste("q",num_cuts,sep="")
+                                                                  ,"q1",var_name,factor_rank_name,"avg","diff",
                                                                    sep="_")
   data<-as.data.table(data)
 
@@ -492,8 +566,8 @@ get_avg_max_protfolios<-function(data,factor_rank_name,num_cuts){
 
 #' calculate alphas for double sorted portfolios
 #' @description It calculates the alpha for the return of double sorted portfolio for each rank. The
-#' rank are max ranks and factor rank(e.g small size for LMAX, MMAX and HMAX),  differcne between the highest and lowest rank (HMAX-LMAX) and average return
-#'   for each factor controlling for max(e.g. average return for three portfolios of BIG,MED and SMA size for LMAX).
+#' rank are max or iv ranks and factor rank(e.g small size for LMAX, MMAX and HMAX),  differcne between the highest and lowest rank (HMAX-LMAX) and average return
+#'   for each factor controlling for max or iv(e.g. average return for three portfolios of BIG,MED and SMA size for LMAX).
 
 #'@param dt  data table with the return of a double sorted portfolio
 #'@return \code{dt} data table with the alphas for each double sorted portfolio
@@ -532,8 +606,16 @@ calculate_alphas<-function(dt,num_cuts){
 #'@export
 #'
 
-format_table_output<-function(alphas_table,is_ew=T,num_cuts){
+format_table_output<-function(alphas_table,is_ew=T,num_cuts,is_max_p=T){
 
+  if(is_max_p){
+    var_name<-"max"
+    replacing_name<-"MAX"
+  }else{
+    var_name<-"IV"
+    replacing_name<-"IV"
+
+  }
 
   alphas_table[1]<-round(alphas_table[1],3)
   alphas_table[2]<-round(alphas_table[2],2)
@@ -562,10 +644,16 @@ format_table_output<-function(alphas_table,is_ew=T,num_cuts){
 
 
   alphas_table$factor <- gsub("-rank", "", alphas_table$factor)
-  alphas_table$factor <- gsub("max","MAX",alphas_table$factor)
+  alphas_table$factor <- gsub(var_name,replacing_name,alphas_table$factor)
   alphas_table$p.value <- paste("(",alphas_table$p.value,")")
 
-  alphas_table<-separate(alphas_table,factor,c("max","factor2"),sep="-MAX-")
+  if(is_max_p){
+    alphas_table<-separate(alphas_table,factor,c(var_name,"factor2"),sep="-MAX-")
+
+  }else{
+    alphas_table<-separate(alphas_table,factor,c(var_name,"factor2"),sep="-IV-")
+
+  }
   alphas_table<-data.table(t(alphas_table))
 
   #to be used in flipping factor column to the right at the end
@@ -598,7 +686,13 @@ format_table_output<-function(alphas_table,is_ew=T,num_cuts){
 
 
   if(num_cuts==3){
-    colnames(formated_table)[1:cuts_plus_1]<-c( "L-MAX","M-MAX","H-MAX",'HMAX-LMAX')
+    if(is_max_p){
+      colnames(formated_table)[1:cuts_plus_1]<-c( "L-MAX","M-MAX","H-MAX",'HMAX-LMAX')
+
+    }else{
+      colnames(formated_table)[1:cuts_plus_1]<-c( "L-IV","M-IV","H-IV",'HIV-LIV')
+
+    }
 
   }
   if(is_ew){

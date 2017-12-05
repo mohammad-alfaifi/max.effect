@@ -4,7 +4,7 @@
 \alias{calculate_iv_factor_for_e_and_v_returns}
 \title{calculate IV factor}
 \usage{
-calculate_iv_factor_for_e_and_v_returns(dt, portfolio = F, weighted = F,
+calculate_iv_factor_for_e_and_v_returns(dt, portfolio = F, is_ew = T,
   num_cuts)
 }
 \arguments{

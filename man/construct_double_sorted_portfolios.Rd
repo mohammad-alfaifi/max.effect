@@ -5,7 +5,7 @@
 \title{calculate double sorted alphas}
 \usage{
 construct_double_sorted_portfolios(dt, factor_dt, num_cuts, factor_rank_name,
-  is_e_weighted = T)
+  is_e_weighted = T, max_type = "max")
 }
 \arguments{
 \item{dt}{data table with return and ten other factors}

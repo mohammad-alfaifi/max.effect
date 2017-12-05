@@ -5,12 +5,12 @@
 \title{get the alpha and p-values for double sorted portfolios}
 \usage{
 get_factor_controlled_portfolio_stats(dt, factor_rank_name, is_e_weighted = T,
-  num_cuts)
+  num_cuts, is_max_p = T)
 }
 \arguments{
 \item{dt}{data table with double sorted stocks}
 
-\item{factor_rank_name}{the name of the factor that we want to double sort with max}
+\item{factor_rank_name}{the name of the factor that we want to double sort with max or iv}
 
 \item{is_e_weighted}{logical, if False calculates the return of value weighted portfolios}
 

@@ -4,7 +4,7 @@
 \alias{calculate_double_sorted_alpha}
 \title{calculate double sorted alphas}
 \usage{
-calculate_double_sorted_alpha(dt, num_cuts, n = 1)
+calculate_double_sorted_alpha(dt, num_cuts, n = 1, max_type = "max")
 }
 \arguments{
 \item{dt}{data table with return and ten other factors}

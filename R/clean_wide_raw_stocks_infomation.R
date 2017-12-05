@@ -51,16 +51,6 @@ clean_wide_raw_stocks_infomation=function(raw_stocks_info_file,rf_daily_file,
   dt <- as.data.table(dt)
 
   dt<-clean_stocks_infomation(dt,rf_daily_file,rf_monthly_file)
-  #bottom_half<-round(nrow(dt)/2,0)
-  #upper_half <- bottom_half+1
-
-  #bottom_dt <- dt[1:bottom_half,]
-  #upper_dt<-dt[upper_half:nrow(dt)]
-  #rm(dt)
-  #bottom_dt<-clean_stocks_infomation(bottom_dt,rf_daily_file,rf_monthly_file)
-  #upper_dt<-clean_stocks_infomation(upper_dt,rf_daily_file,rf_monthly_file)
-
- # dt<-rbind(bottom_dt,upper_dt)
 
   return(dt)
 
@@ -143,7 +133,7 @@ clean_stocks_infomation=function(dt,rf_daily_file,
 
 
   #to exclude duplicated prices and easily work with monthly data
-  StockInfo[Vol < 1 | is.na(Vol),prices:=0,]
+  StockInfo[Vol == 0 | is.na(Vol),prices:=0,]
   StockInfo <- StockInfo[prices > 0,]
 
   #to have all info

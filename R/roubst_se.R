@@ -9,7 +9,7 @@
 #'
 roubst_se<-function(mod){
 
-  roubst_mod<-tidy(coeftest(mod,vcov. = vcovHC(mod,"HC1")))[1,c(2,5)]
+  roubst_mod<-tidy(coeftest(mod,vcov. = NeweyWest(mod,lag=0,prewhite = F)))[1,c(2,5)]
 
   return(roubst_mod)
 

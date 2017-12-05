@@ -4,7 +4,7 @@
 \alias{calculate_bivariate_avg_for_all_vars}
 \title{calculate_bivariate_avg_for_all_vars}
 \usage{
-calculate_bivariate_avg_for_all_vars(dt, iv = FALSE)
+calculate_bivariate_avg_for_all_vars(dt, max_type = "max", iv = FALSE)
 }
 \arguments{
 \item{dt}{data table with stock returns and ten factorS (e.g momentum,size,IV,max)}

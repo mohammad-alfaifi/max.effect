@@ -5,7 +5,7 @@
 \title{calculate returns for max for equally and value weighted portfolio}
 \usage{
 calculate_max_factor_for_e_and_v_returns(dt, portfolio = F, is_ew = T,
-  n = 1, num_cuts)
+  n = 1, num_cuts, max_type = "max")
 }
 \arguments{
 \item{e_rt}{data table with daily  equilly weighted returns}

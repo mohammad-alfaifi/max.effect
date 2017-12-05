@@ -4,7 +4,7 @@
 \alias{get_fama_macbeth_bivariate_values}
 \title{get_fama_macbeth_bivariate_values}
 \usage{
-get_fama_macbeth_bivariate_values(dt)
+get_fama_macbeth_bivariate_values(dt, max_type = "max")
 }
 \arguments{
 \item{dt}{data table with stock returns and ten factorS (e.g momentum,size,IV,max)}

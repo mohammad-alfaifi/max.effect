@@ -14,6 +14,6 @@ calculate_alphas(dt, num_cuts)
 }
 \description{
 It calculates the alpha for the return of double sorted portfolio for each rank. The
-rank are max ranks and factor rank(e.g small size for LMAX, MMAX and HMAX),  differcne between the highest and lowest rank (HMAX-LMAX) and average return
-  for each factor controlling for max(e.g. average return for three portfolios of BIG,MED and SMA size for LMAX).
+rank are max or iv ranks and factor rank(e.g small size for LMAX, MMAX and HMAX),  differcne between the highest and lowest rank (HMAX-LMAX) and average return
+  for each factor controlling for max or iv(e.g. average return for three portfolios of BIG,MED and SMA size for LMAX).
 }

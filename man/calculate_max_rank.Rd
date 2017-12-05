@@ -4,7 +4,8 @@
 \alias{calculate_max_rank}
 \title{calculate max and classify firms accordingly}
 \usage{
-calculate_max_rank(dt, n = 1, num_cuts = 3)
+calculate_max_rank(dt, n = 1, num_cuts = 3, rank_only = F,
+  max_type = "max")
 }
 \arguments{
 \item{dt}{data table with daily prices}

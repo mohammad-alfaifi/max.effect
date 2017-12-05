@@ -4,7 +4,7 @@
 \alias{classify_firms_according_to_mv_and_bm}
 \title{classfiys firms based on market cap and book-to-market}
 \usage{
-classify_firms_according_to_mv_and_bm(dt, mv_breakpoint = 0.5)
+classify_firms_according_to_mv_and_bm(dt)
 }
 \arguments{
 \item{dt}{data table with daily returns, market cap, book-to-market}

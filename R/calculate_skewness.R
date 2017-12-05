@@ -10,6 +10,7 @@
 
 calculate_skewness_rank <- function(dt,num_cuts,double_sorted=F){
 
+
   #calculate fama-french three factors model
   ff3 <- calculate_ff3(dt)
   ff3<-ff3[,-"RF",with=F]
@@ -25,6 +26,7 @@ calculate_skewness_rank <- function(dt,num_cuts,double_sorted=F){
   skewness=na.omit(daily_ff3[,.(iskew=skewness(lm(excess_returns ~ mkt_prem)$residuals),
                               coskew=(lm(excess_returns ~ I(mkt_prem^2))$coefficients[2])),
                            by=.(yearmon,firms)])
+
 
 
   #to get different ranks

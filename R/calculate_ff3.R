@@ -103,8 +103,9 @@ calculate_market_excess_returns <- function(dt,monthly=F, country_code=NULL, sav
 #'
 #'
 #'
-classify_firms_according_to_mv_and_bm <- function(dt,mv_breakpoint=0.5){
+classify_firms_according_to_mv_and_bm <- function(dt){
 
+print(mv_breakpoint)
   #to use one day information on the month of June and month of December
   dt <- dt[order(+dates)]
   dt_monthly <- dt[,.SD[.N],by=.(yearmon,firms)]
@@ -171,5 +172,26 @@ calculate_six_portfolios_returns <- function(dt,monthly=F){
 }
 
 
+#' calculate fama-french US values
+#' @description reterive, orginze the data from French website of the FF-3
+#'@return \code{dt} with three factor values with risk free rate
+#' @import data.table
+#'@export
+#'
+#'
+#'
+calculate_US_ff3 <- function(){
+  ff3_file<-'/home/moh/Downloads/ff3.csv'
 
+  ff3<-as.data.table(read.csv(ff3_file))
+
+  ff3$year <- substr(ff3$dates,1,4)
+  ff3$month <- substr(ff3$dates,5,6)
+  ff3$day <- "1"
+  ff3$dates<-paste(ff3$year,ff3$month,ff3$day,sep = "-")
+  ff3$yearmon<-as.yearmon(ff3$dates)
+
+  ff3<-ff3[,.(yearmon,smb=smb/100,hml=hml/100,mkt_prem=mkt_prem/100)]
+  return(ff3)
+}
 

@@ -10,7 +10,7 @@
 #'@export
 #'
 
-calculate_iv_rank <- function(dt,portfolio_only=F,num_cuts,double_sorted=F){
+calculate_iv_rank <- function(dt,num_cuts,rank_only=F,double_sorted=F){
 
   #calculate 3 factors model to be used for regression model
   ff3 <- calculate_ff3(dt)
@@ -35,22 +35,27 @@ calculate_iv_rank <- function(dt,portfolio_only=F,num_cuts,double_sorted=F){
   #to get different ranks
    iv <-cut_portfolio(iv,"IV","IV_rank",num_cuts)
 
-   if(double_sorted==T){
+
+   if(rank_only==T){
      return(iv)
    }
+    if(double_sorted){
+      dt <- dt[order(+dates)]
+      dt_monthly <- dt[,.SD[.N],by=.(yearmon,firms)]
+      dt_monthly <-na.omit(merge(iv,dt_monthly,by=c("yearmon","firms")))
+      dt_monthly$yearmon<-dt_monthly$yearmon+ (1/12)
+      return(dt_monthly)
+    }
   #change dates to next month date in order to merge with the returns
   #and also to represent IV correctly since it is for the previous month
   #by definition
   iv$yearmon <- iv$yearmon + (1/12)
 
 
+  dt <- dt[order(+dates)]
+  dt_monthly <- dt[,.SD[.N],by=.(yearmon,firms)]
+  dt_monthly <-na.omit(merge(iv,dt_monthly))
 
-  #get the value for the end of the month for each firm to merge
-  returns_with_ff3 <- returns_with_ff3[order(+dates)]
-  monthly_rt_with_ff3 <- returns_with_ff3[,.SD[.N],by=.(yearmon,firms)]
-  monthly_rt_with_ff3 <- monthly_rt_with_ff3[,.(yearmon,firms,prices,MV,RF_m)]
-
-  dt_monthly <- merge(monthly_rt_with_ff3,iv)
 
   return(dt_monthly)
 }
@@ -73,10 +78,12 @@ calculate_iv_e_returns <- function(iv){
   iv_rt <- iv[order(+yearmon)]
   iv_rt <- iv_rt[,monthly_returns:=log(prices)-shift(log(prices), 1L, type="lag"),by=.(firms)]
   iv_rt <- na.omit(iv_rt)
-  iv_rt <- iv_rt[,.(portfolio_return=mean(monthly_returns),RF_m),
-                   by=.(IV_rank,yearmon)][!duplicated(portfolio_return)]
+  iv_rt <- iv_rt[,.(portfolio_return=mean(monthly_returns)),
+                   by=.(IV_rank,yearmon,RF_m)]
   iv_rt$portfolio_return <- iv_rt$portfolio_return - iv_rt$RF_m
+
   iv_rt<-iv_rt[,-('RF_m'),with=F]
+
 
 
   return(iv_rt)
@@ -95,11 +102,14 @@ calculate_iv_e_returns <- function(iv){
 
 calculate_iv_v_returns <- function(iv){
 
-  iv_rt <- iv[,.(sum_mvs = sum(MV),RF_m),by=.(IV_rank,yearmon)][!duplicated(sum_mvs)][order(+yearmon)]
+
+  iv_rt <- iv[,.(sum_mvs = sum(MV)),by=.(RF_m,IV_rank,yearmon)][order(+yearmon)]
   iv_rt <- iv_rt[,portfolio_return:= log(sum_mvs)-shift(log(sum_mvs),1L, type="lag"),
-                 by=.(IV_rank)]
+                   by=.(IV_rank)]
+
   iv_rt$portfolio_return <- iv_rt$portfolio_return-iv_rt$RF_m
   iv_rt <- na.omit(iv_rt[,-c("sum_mvs","RF_m"),with=F])
+
 
   return(iv_rt)
 }
@@ -135,7 +145,7 @@ calculate_iv_factor <- function(iv,is_equally_weighted,portfolio=F,num_cuts){
 
 
   iv_rt_wide<- spread(iv_rt,IV_rank,portfolio_return)
-  iv_rt_wide$max_factor <- iv_rt_wide[[highest_rank]] - iv_rt_wide$q1
+  iv_rt_wide$iv_factor <- iv_rt_wide[[highest_rank]] - iv_rt_wide$q1
   iv_rt_wide <- na.omit(iv_rt_wide[,.(yearmon,iv_factor)])
 
   return(iv_rt_wide)
@@ -154,7 +164,7 @@ calculate_iv_factor <- function(iv,is_equally_weighted,portfolio=F,num_cuts){
 #'@export
 #'
 
-calculate_iv_factor_for_e_and_v_returns <- function(dt,portfolio=F,weighted=F,num_cuts){
+calculate_iv_factor_for_e_and_v_returns <- function(dt,portfolio=F,is_ew=T,num_cuts){
 
   iv <- calculate_iv_rank(dt,num_cuts)
 
@@ -163,8 +173,8 @@ calculate_iv_factor_for_e_and_v_returns <- function(dt,portfolio=F,weighted=F,nu
 
 
   if(portfolio ){
-    if(weighted){ return(v_iv)}
-    return(e_iv)
+    if(is_ew){ return(e_iv)}
+    return(v_iv)
   }
 
   colnames(e_iv)[which(colnames(e_iv)=="iv_factor")] <- "e_iv_factor"
@@ -174,4 +184,156 @@ calculate_iv_factor_for_e_and_v_returns <- function(dt,portfolio=F,weighted=F,nu
 
   return(iv_factors)
 
+}
+
+
+
+#' group iv alpha and raw returns for EW and VW portfolios
+#' @description It takes a long-formated data table with daily return and calls
+#' calculate_iv_factor_for_e_and_v_returns function to get the equally-weighted and
+#' value-weighted returns for iv portfolio. Then, it calss calculate_iv_portfolio_alpha_and_raw_returns
+#' function to get the alpha and raw returns for portfolio either equally-weighted or value-weighted. Finally,
+#' it groups the equally-weighted and value-weighted alpha and raw returns in one data table
+#'@param dt  data table with daily  prices
+
+#' returns
+#'@return \code{dt} with alphas and raw returns for equally-weighted and value-weighted portfolios
+#' @import data.table
+#'@export
+#'
+get_iv_ew_and_vw_portfolio_returns <- function(dt,num_cuts){
+  e_iv_ps<-calculate_iv_factor_for_e_and_v_returns(dt,portfolio=T,is_ew=T,num_cuts)
+  ew_rt<-calculate_iv_portfolio_alpha_and_raw_returns(e_iv_ps,is_ew=T,dt,num_cuts)
+
+  v_iv_ps<-calculate_iv_factor_for_e_and_v_returns(dt,portfolio=T,is_ew=F,num_cuts)
+  vw_rt<-calculate_iv_portfolio_alpha_and_raw_returns(v_iv_ps,is_ew=F,dt,num_cuts)
+  iv_avg_returns<-cbind(ew_rt,vw_rt)
+
+
+  return(iv_avg_returns)
+}
+
+#' calculate alpha and raw return for portfolio
+#' @description It takes a data table with the monthly return of each iv rank,
+#' then it calculates the difference between the HMAX and LIV and merge them
+#' with the dt of three-factor model. Next, it calls calculate_iv_portfolio_alpha_or_raw_returns function
+#' twice to get the raw and alpha returns. It calls round_and_format function to format the alpha and raw
+#' returns and then combine them in one data table
+#'@param iv_ps  data table with monthly return of each iv rank
+#'@param is_ew logical, indicating wither the monthly return of each iv rank is equally-weighted
+#'or value weighted.
+#'@param dt  data table with daily prices, market value and book to market. used for FF-3 calculation
+#'@return \code{dt} with alpha and raw returns for either equally-weighted or value-weighted iv portfolio
+#' @import data.table
+#'@export
+#'
+calculate_iv_portfolio_alpha_and_raw_returns<-function(iv_ps,is_ew,dt,num_cuts){
+
+  highest_rank <- paste("q",num_cuts,sep="")
+  highest_portfolio <- paste("q",(num_cuts+1),sep = "")
+  #HMAX-LIV iv return on ff3
+  iv_ps<-spread(iv_ps,IV_rank,portfolio_return)
+  #create High-Low Max
+  iv_ps[[highest_portfolio]] <- iv_ps[[highest_rank]] - iv_ps$q1
+
+  ff3_m<-calculate_ff3(dt,monthly = T)
+  #ff3_m<-calculate_US_ff3()
+
+  iv_ps<-merge(iv_ps,ff3_m,by="yearmon")
+
+
+  #regression results
+
+  iv_alphas<-calculate_iv_portfolio_alpha_or_raw_returns(iv_ps,alphas=T,num_cuts)
+  iv_raw_rt<-calculate_iv_portfolio_alpha_or_raw_returns(iv_ps,alphas=F,num_cuts)
+
+
+  iv_alphas<-round_and_format_iv(iv_alphas,alphas = T,num_cuts)
+  iv_raw_rt<-round_and_format_iv(iv_raw_rt,alphas = F,num_cuts)
+
+  iv_rt<-rbind(iv_raw_rt,iv_alphas)
+
+  colnames(iv_rt)[which(colnames(iv_rt)=="factor")] <- ifelse(is_ew==TRUE,"EW","VW")
+
+  return(iv_rt)
+}
+
+#' calculates alpha or raw return for a iv portfolio
+#' @description It takes a data table with monthly return of each iv rank and H-IV-LIV rank
+#' and calculates either the alpha or raw raturn for each rank. It uses only the intercept and P-value
+#'@param alphas  logical, if True, it calculates the alpha return
+
+#' returns
+#'@return \code{dt} with alpha or raw return for each iv rank
+#' @import data.table
+#'@export
+#'
+calculate_iv_portfolio_alpha_or_raw_returns<-function(iv_ps,alphas=T,num_cuts){
+
+  rt_avg<-data.table()
+
+
+  for(i in 1:(num_cuts+1)){
+    y=as.name(paste("q",i,sep=""))
+    if(alphas){
+      q<-lm(eval(y)~smb+hml+mkt_prem,data=iv_ps,na.action = na.exclude)
+    }else{
+      q<-lm(eval(y)~1,data=iv_ps,na.action = na.exclude)
+    }
+    #get roubst standard error of the model
+    r_q<-roubst_se(q)
+
+    if(i==1){
+      rt_avg<-r_q
+
+    }else{
+      rt_avg<-rbind(rt_avg,r_q)
+
+    }
+  }
+
+  return(rt_avg)
+}
+
+
+#' format the raw or alpha return results
+#' @description It takes data table with the result of raw return or
+#' alpha return for each iv rank and round the return and p-value and format
+#' the results.
+#' iv factors for for equally and value weighted portfolio
+#'@param avg_rt  data table with alpha or raw return
+#'@param alphas  logical, if TRUE, it highlights that the return is for
+#' the alpha of the three-factor model
+
+#'@return \code{dt} with iv_factor for both equally and value weighted returns
+#' @import data.table
+#'@export
+#'
+round_and_format_iv<-function(avg_rt,alphas=T,num_cuts){
+
+  avg_rt[,c(1,2)]<-round(avg_rt[,c(1,2)],3)
+  avg_rt$estimate<-ifelse(avg_rt$p.value<=.01,paste( avg_rt$estimate,"***"),
+                          ifelse(avg_rt$p.value<=.05,paste(avg_rt$estimate,"**"),
+                                 ifelse(avg_rt$p.value<=.1,paste(avg_rt$estimate,"*"),
+                                        avg_rt$estimate)) )
+  avg_rt$p.value <- paste("(",avg_rt$p.value,")")
+
+  avg_rt<-data.table(t(avg_rt))
+  if(num_cuts==3){
+    colnames(avg_rt)<-c("Low-IV","Med-IV","High-IV","High-Low-IV")
+  }else{
+    middle_iv<-as.character(2:(num_cuts-1))
+    colnames(avg_rt)[1]<-"Low-IV"
+    colnames(avg_rt)[2:(num_cuts-1)]<-middle_iv
+    colnames(avg_rt)[num_cuts]<-"High-IV"
+    colnames(avg_rt)[(num_cuts+1)]<-"High-Low-IV"
+  }
+  #colnames(avg_rt)<-as.character(avg_rt[3,])
+  #avg_rt<-avg_rt[-3,]
+  avg_rt$factor <- ifelse(alphas==TRUE,"FF-3","Raw")
+  avg_rt$factor[duplicated(avg_rt$factor)] <- ""
+  avg_rt<-avg_rt[,.(factor,`Low-IV`,`Med-IV`,`High-IV`,`High-Low-IV`)]
+
+
+  return(avg_rt)
 }
